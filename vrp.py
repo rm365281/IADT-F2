@@ -40,18 +40,16 @@ class VRP:
         return population
     
     def fitness(self, solution: Solution) -> float:
-        total_distance = 0
         penalty = 0
 
         for vehicle in solution.vehicles:
             distance = self.calculate_distance(vehicle=vehicle)
             vehicle.distance = distance
-            total_distance += distance
 
             if len(vehicle.itinerary) < 2:
                 penalty += 1000
 
-        return total_distance + penalty
+        return solution.total_distance() + penalty
 
     def calculate_distance(self, vehicle: Vehicle) -> float:
         distance = 0

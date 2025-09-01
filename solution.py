@@ -12,3 +12,6 @@ class Solution:
             vehicle_str = str(vehicle).replace("Vehicle", f"Vehicle {v_idx}")
             lines.append(f"  {vehicle_str}")
         return "\n".join(lines)
+    
+    def total_distance(self) -> float:
+        return sum(vehicle.distance for vehicle in self.vehicles)
