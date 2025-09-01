@@ -43,22 +43,12 @@ class VRP:
         penalty = 0
 
         for vehicle in solution.vehicles:
-            distance = self.calculate_distance(vehicle=vehicle)
-            vehicle.distance = distance
+            vehicle.calculate_distance(self.customer_distance_matrix)
 
             if len(vehicle.itinerary) < 2:
                 penalty += 1000
 
         return solution.total_distance() + penalty
-
-    def calculate_distance(self, vehicle: Vehicle) -> float:
-        distance = 0
-        itinerary_length = len(vehicle.itinerary)
-        for customer in range(itinerary_length):
-            customer_a = vehicle.itinerary[customer]
-            customer_b = vehicle.itinerary[(customer + 1) % itinerary_length]
-            distance += self.customer_distance_matrix[customer_a.id][customer_b.id]
-        return distance
     
     def crossover(self, population: list[Solution], population_fitness: list[float]) -> Solution:
         probability = 1 / np.array(population_fitness)

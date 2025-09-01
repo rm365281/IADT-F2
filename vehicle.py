@@ -1,6 +1,4 @@
-from dataclasses import dataclass, field
-
-from numpy import deg2rad
+from dataclasses import field
 
 from customer import Customer
 
@@ -13,6 +11,15 @@ class Vehicle:
         self.itinerary = itinerary
         self.capacity = capacity
         self.distance = 0.0
+    
+    def calculate_distance(self, customer_distance_matrix: list[list[float]]):
+        distance = 0
+        itinerary_length = len(self.itinerary)
+        for customer_index in range(itinerary_length):
+            customer_a = self.itinerary[customer_index]
+            customer_b = self.itinerary[(customer_index + 1) % itinerary_length]
+            distance += customer_distance_matrix[customer_a.id][customer_b.id]
+        self.distance = distance
 
     def __str__(self):
         lines = []
