@@ -21,6 +21,9 @@ class Vehicle:
             distance += customer_distance_matrix[customer_a.id][customer_b.id]
         self.distance = distance
 
+    def hasAtLeastTwoCustomers(self) -> bool:
+        return len(self.itinerary) >= 2
+
     def __str__(self):
         lines = []
         lines.append(f"Vehicle (capacity={self.capacity}, customers={len(self.itinerary)}, distance={round(self.distance, 2)}):")
