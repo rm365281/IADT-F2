@@ -15,3 +15,16 @@ class Solution:
     
     def total_distance(self) -> float:
         return sum(vehicle.distance for vehicle in self.vehicles)
+    
+    def calculate_distances(self, customer_distance_matrix: list[list[float]]):
+        for vehicle in self.vehicles:
+            vehicle.calculate_distance(customer_distance_matrix)
+
+    def calculate_total_cost(self) -> float:
+        penalty = 0
+        total_distance = 0
+        for vehicle in self.vehicles:
+            if not vehicle.hasAtLeastTwoCustomers():
+                penalty += 1000
+            total_distance += vehicle.distance
+        return total_distance + penalty

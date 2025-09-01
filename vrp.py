@@ -40,15 +40,8 @@ class VRP:
         return population
     
     def fitness(self, solution: Solution) -> float:
-        penalty = 0
-
-        for vehicle in solution.vehicles:
-            vehicle.calculate_distance(self.customer_distance_matrix)
-
-            if len(vehicle.itinerary) < 2:
-                penalty += 1000
-
-        return solution.total_distance() + penalty
+        solution.calculate_distances(self.customer_distance_matrix)
+        return solution.calculate_total_cost()
     
     def crossover(self, population: list[Solution], population_fitness: list[float]) -> Solution:
         probability = 1 / np.array(population_fitness)
