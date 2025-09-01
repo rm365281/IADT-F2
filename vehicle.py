@@ -1,13 +1,18 @@
 from dataclasses import dataclass, field
 
+from numpy import deg2rad
+
 from customer import Customer
 
-
-@dataclass
 class Vehicle:
     itinerary: list[Customer]
     capacity: int = 100
     distance: float = field(default=0.0, compare=False)
+
+    def __init__(self, itinerary: list[Customer], capacity: int = 100) -> None:
+        self.itinerary = itinerary
+        self.capacity = capacity
+        self.distance = 0.0
 
     def __str__(self):
         lines = []
