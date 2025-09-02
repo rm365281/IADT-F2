@@ -5,7 +5,7 @@ from customer import Customer
 import numpy as np
 from solution import Solution
 from vehicle import Vehicle
-
+from sklearn.neighbors import NearestNeighbors
 
 class VRP:
     customers: list[Customer]
@@ -33,14 +33,45 @@ class VRP:
         customers = self.customers[1:]
         n = len(customers)
 
-        for _ in range(population_size):
-            shuflled = random.sample(customers, n)
-            chunks = np.array_split(shuflled, number_vehicles)
+        coords = np.array([[c.x, c.y] for c in self.customers])
+        nn = NearestNeighbors(n_neighbors=n, algorithm="ball_tree").fit(coords)
 
-            vehicles = [Vehicle(depot, itinerary=list(chunk))
-                        for chunk in chunks]
+        for _ in range(population_size):
+            unvisited = set(customers)
+            vehicles = []
+
+            for _ in range(number_vehicles):
+                if not unvisited:
+                    break
+
+                start = random.choice(list(unvisited))
+                unvisited.remove(start)
+                route = [start]
+
+                current = start
+                while unvisited and len(route) < n // number_vehicles + 1:
+                    distances, indices = nn.kneighbors([[current.x, current.y]])
+                    next_customer = None
+                    for idx in indices[0]:
+                        candidate = self.customers[idx]
+                        if candidate in unvisited:
+                            next_customer = candidate
+                            break
+                    if next_customer is None:
+                        break
+                    unvisited.remove(next_customer)
+                    route.append(next_customer)
+                    current = next_customer
+
+                vehicles.append(Vehicle(depot=depot, itinerary=route))
+
+            if unvisited:
+                for customer in unvisited:
+                    random.choice(vehicles).itinerary.append(customer)
+
             solution = Solution(vehicles=vehicles)
             population.append(solution)
+
         return population
 
     def fitness(self, solution: Solution) -> float:
