@@ -30,6 +30,7 @@
 # Separar o código em frontend e backend
 
 import itertools
+from operator import ge
 from customer import Customer
 from genetic_algorithm import sort_population, default_problems
 from vrp import VRP
@@ -57,15 +58,14 @@ while generate:
     population, population_fitness = sort_population(population,  population_fitness)
 
     best_solution = population[0]
-    best_fitness = best_solution.total_distance();
 
-    print(f"Generation {generation}: Best fitness = {round(best_fitness, 2)} | Solution: {best_solution}")
+    print(f"Generation {generation}: Best fitness = {round(best_solution.total_distance(), 2)} | Solution: {best_solution}")
 
     new_population = [population[0]]
 
     while len(new_population) < POPULATION_SIZE:
         child = vrp.crossover(population, population_fitness)
-        child = vrp.mutate(child, MUTATION_PROBABILITY)
+        #child = vrp.mutate(child, MUTATION_PROBABILITY)
         new_population.append(child)
 
     population = new_population

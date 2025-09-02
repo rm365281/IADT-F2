@@ -20,7 +20,6 @@ class VRP:
             for j, b in enumerate(customers):
                 if i != j:
                     matrix[i][j] = self._euclidean_distance(a, b)
-        print(matrix)
         return matrix
 
     def _euclidean_distance(self, a: Customer, b: Customer) -> float:
@@ -28,13 +27,15 @@ class VRP:
     
     def generate_initial_population(self, population_size: int, number_vehicles: int) -> list[Solution]:
         population = []
-        n = len(self.customers)
+        depot = self.customers[0]
+        customers = self.customers[1:]
+        n = len(customers)
 
         for _ in range(population_size):
-            shuflled = random.sample(self.customers, n)
+            shuflled = random.sample(customers, n)
             chunks = np.array_split(shuflled, number_vehicles)
 
-            vehicles = [Vehicle(itinerary=list(chunk)) for chunk in chunks]
+            vehicles = [Vehicle(depot, itinerary=list(chunk)) for chunk in chunks]
             solution = Solution(vehicles=vehicles)
             population.append(solution)
         return population
@@ -47,8 +48,8 @@ class VRP:
         probability = 1 / np.array(population_fitness)
         parent1, parent2 = random.choices(population, weights=probability, k=2)
 
-        p1_flat = [c for v in parent1.vehicles for c in v.itinerary]
-        p2_flat = [c for v in parent2.vehicles for c in v.itinerary]
+        p1_flat = parent1.itineraries()
+        p2_flat = parent2.itineraries()
         n = len(p1_flat)
 
         start, end = sorted(random.sample(range(n), 2))
@@ -67,7 +68,7 @@ class VRP:
         vehicles = []
         idx = 0
         for size in vehicle_sizes:
-            vehicles.append(Vehicle(itinerary=child_flat[idx:idx+size], capacity=100))
+            vehicles.append(Vehicle(depot=self.customers[0], itinerary=child_flat[idx:idx+size], capacity=100))
             idx += size
 
         return Solution(vehicles=vehicles)
@@ -80,7 +81,7 @@ class VRP:
             for i in range(len(itinerary) - 1):
                 if random.random() < mutation_probability:
                     itinerary[i], itinerary[i + 1] = itinerary[i + 1], itinerary[i]
-            new_vehicles.append(Vehicle(itinerary=itinerary, capacity=vehicle.capacity))
+            new_vehicles.append(Vehicle(depot=vehicle.depot, inerary=itinerary, capacity=vehicle.capacity))
 
         if random.random() < mutation_probability:
             v1, v2 = random.sample(new_vehicles, 2)
@@ -88,7 +89,7 @@ class VRP:
                 c = random.choice(v1.itinerary)
                 v1_itinerary = [x for x in v1.itinerary if x != c]
                 v2_itinerary = v2.itinerary + [c]
-                new_vehicles[new_vehicles.index(v1)] = Vehicle(itinerary=v1_itinerary, capacity=v1.capacity)
-                new_vehicles[new_vehicles.index(v2)] = Vehicle(itinerary=v2_itinerary, capacity=v2.capacity)
+                new_vehicles[new_vehicles.index(v1)] = Vehicle(depot=v1.depot, itinerary=v1_itinerary, capacity=v1.capacity)
+                new_vehicles[new_vehicles.index(v2)] = Vehicle(depot=v2.depot, itinerary=v2_itinerary, capacity=v2.capacity)
 
         return Solution(vehicles=new_vehicles)

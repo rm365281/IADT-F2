@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from customer import Customer
 from vehicle import Vehicle
 
 @dataclass(frozen=True)
@@ -20,11 +21,14 @@ class Solution:
         for vehicle in self.vehicles:
             vehicle.calculate_distance(customer_distance_matrix)
 
+    def itineraries(self) -> list[Customer]:
+        return [customer for vehicle in self.vehicles for customer in vehicle.itinerary]
+
     def calculate_total_cost(self) -> float:
         penalty = 0
         total_distance = 0
         for vehicle in self.vehicles:
-            if not vehicle.hasAtLeastTwoCustomers():
+            if not vehicle.hasAtLeastOneCustomers():
                 penalty += 1000
             total_distance += vehicle.distance
         return total_distance + penalty
