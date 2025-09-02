@@ -39,7 +39,7 @@ class VRP:
 
         for _ in range(population_size):
             unvisited = set(customers)
-            vehicles = []
+            vehicles: list[Vehicle] = []
 
             for _ in range(number_vehicles):
                 if not unvisited:
@@ -64,11 +64,11 @@ class VRP:
                     route.append(next_customer)
                     current = next_customer
 
-                vehicles.append(Vehicle(depot=depot, itinerary=Itinerary(customers=route)))
+                vehicles.append(Vehicle(depot=depot, itineraries=[Itinerary(customers=route)]))
 
             if unvisited:
                 for customer in unvisited:
-                    random.choice(vehicles).itinerary.customers.append(customer)
+                    random.choice(vehicles).itineraries[0].customers.append(customer)
 
             solution = Solution(vehicles=vehicles)
             population.append(solution)
@@ -80,33 +80,57 @@ class VRP:
         return solution.calculate_total_cost()
 
     def crossover(self, population: list[Solution], population_fitness: list[float]) -> Solution:
+        """
+        Performs genetic algorithm crossover to create a child solution from two parents.
+        Uses fitness-based selection and route combination strategy.
+        """
+        # Select parents using inverse fitness weighting (lower fitness = higher probability)
         probability = 1 / np.array(population_fitness)
         parent1, parent2 = random.choices(population, weights=probability, k=2)
 
-        child_routes = [list(vehicle.itinerary.customers) for vehicle in parent1.vehicles]
+        # Extract all routes from parent1
+        child_routes = [list(itinerary.customers) for vehicle in parent1.vehicles for itinerary in vehicle.itineraries]
 
+        if not child_routes:
+            return Solution(vehicles=[])
+    
+        # Select random routes from parent2 to integrate
         num_routes = len(child_routes)
-        cut_size = random.randint(1, num_routes)
+        cut_size = random.randint(1, min(num_routes, len(parent2.vehicles)))
         routes_from_parent2 = random.sample(parent2.vehicles, cut_size)
 
+        # Integrate routes from parent2
+        for vehicle in routes_from_parent2:
+            vehicle_customers = [customer for itinerary in vehicle.itineraries for customer in itinerary.customers]
+        
+            # Remove customers that will be replaced
+            child_routes = [
+                [customer for customer in route if customer not in vehicle_customers]
+                for route in child_routes
+            ]
+        
+            # Insert new route
+            if child_routes:
+                idx = random.randrange(len(child_routes))
+                child_routes[idx] = vehicle_customers
+            else:
+                child_routes.append(vehicle_customers)
+
+        # Add missing customers to smallest routes
         customers_in_child = {customer for route in child_routes for customer in route}
-
-        for route in routes_from_parent2:
-            child_routes = [[customer for customer in r if customer not in route.itinerary.customers] for r in child_routes]
-            idx = random.randrange(num_routes)
-            child_routes[idx] = list(route.itinerary.customers)
-            customers_in_child = {c for route in child_routes for c in route}
-
         all_customers = set(self.customers[1:])
-        missing = list(all_customers - customers_in_child)
+        missing_customers = all_customers - customers_in_child
 
-        for customer in missing:
-            smallest_route = min(child_routes, key=len)
-            smallest_route.append(customer)
+        for customer in missing_customers:
+            if child_routes:
+                min(child_routes, key=len).append(customer)
+            else:
+                child_routes.append([customer])
 
+        # Create child solution with non-empty routes only
         child_vehicles = [
-            Vehicle(depot=self.customers[0], itinerary=Itinerary(customers=route), capacity=100)
-            for route in child_routes
+            Vehicle(depot=self.customers[0], itineraries=[Itinerary(customers=route)], capacity=100)
+            for route in child_routes if route
         ]
 
         return Solution(vehicles=child_vehicles)
@@ -129,11 +153,14 @@ class VRP:
         """
         Troca posições de clientes adjacentes dentro de uma rota.
         """
-        itinerary = vehicle.itinerary.customers[:]
-        for i in range(len(itinerary) - 1):
-            if random.random() < mutation_probability:
-                itinerary[i], itinerary[i + 1] = itinerary[i + 1], itinerary[i]
-        return Vehicle(depot=vehicle.depot, itinerary=Itinerary(customers=itinerary), capacity=vehicle.capacity)
+        mutated_itineraries = []
+        for itinerary in vehicle.itineraries:
+            customers = itinerary.customers[:]
+            for i in range(len(customers) - 1):
+                if random.random() < mutation_probability:
+                    customers[i], customers[i + 1] = customers[i + 1], customers[i]
+            mutated_itineraries.append(Itinerary(customers=customers))
+        return Vehicle(depot=vehicle.depot, itineraries=mutated_itineraries, capacity=vehicle.capacity)
 
 
     def _mutate_interroute(self, vehicles: list[Vehicle]) -> list[Vehicle]:
@@ -141,20 +168,45 @@ class VRP:
         Move um cliente de uma rota para outra.
         """
         v1, v2 = random.sample(vehicles, 2)
-        if not v1.itinerary.customers:
+        
+        # Collect all customers from all itineraries of v1
+        all_customers_v1 = []
+        for itinerary in v1.itineraries:
+            all_customers_v1.extend(itinerary.customers)
+        
+        if not all_customers_v1:
             return vehicles
 
-        customer = random.choice(v1.itinerary.customers)
+        customer = random.choice(all_customers_v1)
+
+        # Remove customer from v1's itineraries
+        v1_new_itineraries = []
+        for itinerary in v1.itineraries:
+            new_customers = [c for c in itinerary.customers if c != customer]
+            v1_new_itineraries.append(Itinerary(customers=new_customers))
 
         v1_new = Vehicle(
             depot=v1.depot,
-            itinerary=Itinerary(customers=[c for c in v1.itinerary.customers if c != customer]),
+            itineraries=v1_new_itineraries,
             capacity=v1.capacity
         )
 
+        # Add customer to a random itinerary of v2 (or create new one if none exist)
+        v2_new_itineraries = []
+        for itinerary in v2.itineraries:
+            v2_new_itineraries.append(Itinerary(customers=itinerary.customers[:]))
+        
+        if v2_new_itineraries:
+            # Add to a random existing itinerary
+            random_itinerary = random.choice(v2_new_itineraries)
+            random_itinerary.customers.append(customer)
+        else:
+            # Create new itinerary with the customer
+            v2_new_itineraries.append(Itinerary(customers=[customer]))
+
         v2_new = Vehicle(
             depot=v2.depot,
-            itinerary=Itinerary(customers=v2.itinerary.customers + [customer]),
+            itineraries=v2_new_itineraries,
             capacity=v2.capacity
         )
 

@@ -9,3 +9,6 @@ class Itinerary:
     def __init__(self, customers: list[Customer]) -> None:
         self.customers = customers
         self.distance = 0.0
+
+    def hasAtLeastOneCustomers(self) -> bool:
+        return len(self.customers) > 0
