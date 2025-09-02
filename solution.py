@@ -6,7 +6,7 @@ from vehicle import Vehicle
 class Solution:
     vehicles: list[Vehicle]
 
-    def __str__(self):
+    def __str__(self) -> None:
         lines = []
         lines.append(f"Number of vehicles: {len(self.vehicles)}")
         for v_idx, vehicle in enumerate(self.vehicles, start=1):
@@ -17,7 +17,7 @@ class Solution:
     def total_distance(self) -> float:
         return sum(vehicle.itinerary.distance for vehicle in self.vehicles)
     
-    def calculate_distances(self, customer_distance_matrix: list[list[float]]):
+    def calculate_distances(self, customer_distance_matrix: list[list[float]]) -> None:
         for vehicle in self.vehicles:
             vehicle.calculate_distance(customer_distance_matrix)
 

@@ -12,7 +12,7 @@ class VRP:
     customers: list[Customer]
     customer_distance_matrix: list[list[float]]
 
-    def __init__(self, customers: list[Customer]):
+    def __init__(self, customers: list[Customer]) -> None:
         self.customers = customers
         self.customer_distance_matrix = self._build_distance_matrix(customers)
 

@@ -15,7 +15,7 @@ class Vehicle:
         self.capacity = capacity
         self.full_itinerary = Itinerary(customers=([self.depot] + self.itinerary.customers + [self.depot]))
     
-    def calculate_distance(self, customer_distance_matrix: list[list[float]]):
+    def calculate_distance(self, customer_distance_matrix: list[list[float]]) -> None:
         distance = 0
         full_itinerary_length = len(self.full_itinerary.customers)
         for customer_index in range(full_itinerary_length):
@@ -27,7 +27,7 @@ class Vehicle:
     def hasAtLeastOneCustomers(self) -> bool:
         return len(self.itinerary.customers) > 1
     
-    def __str__(self):
+    def __str__(self) -> str:
         lines = []
         lines.append(f"Vehicle (capacity={self.capacity}, customers={len(self.itinerary.customers)}, distance={round(self.itinerary.distance, 2)}):")
         if not self.full_itinerary.customers:
