@@ -21,9 +21,6 @@ class Solution:
         for vehicle in self.vehicles:
             vehicle.calculate_distance(customer_distance_matrix)
 
-    def itineraries(self) -> list[Customer]:
-        return [customer for vehicle in self.vehicles for customer in vehicle.itinerary]
-
     def calculate_total_cost(self) -> float:
         distance_median: float = 0.0
         penalty = 0
