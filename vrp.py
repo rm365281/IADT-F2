@@ -5,6 +5,7 @@ from customer import Customer
 import numpy as np
 from solution import Solution
 from vehicle import Vehicle
+from itinerary import Itinerary
 from sklearn.neighbors import NearestNeighbors
 
 class VRP:
@@ -63,11 +64,11 @@ class VRP:
                     route.append(next_customer)
                     current = next_customer
 
-                vehicles.append(Vehicle(depot=depot, itinerary=route))
+                vehicles.append(Vehicle(depot=depot, itinerary=Itinerary(customers=route)))
 
             if unvisited:
                 for customer in unvisited:
-                    random.choice(vehicles).itinerary.append(customer)
+                    random.choice(vehicles).itinerary.customers.append(customer)
 
             solution = Solution(vehicles=vehicles)
             population.append(solution)
@@ -82,7 +83,7 @@ class VRP:
         probability = 1 / np.array(population_fitness)
         parent1, parent2 = random.choices(population, weights=probability, k=2)
 
-        child_routes = [list(vehicle.itinerary) for vehicle in parent1.vehicles]
+        child_routes = [list(vehicle.itinerary.customers) for vehicle in parent1.vehicles]
 
         num_routes = len(child_routes)
         cut_size = random.randint(1, num_routes)
@@ -91,9 +92,9 @@ class VRP:
         customers_in_child = {customer for route in child_routes for customer in route}
 
         for route in routes_from_parent2:
-            child_routes = [[customer for customer in r if customer not in route.itinerary] for r in child_routes]
+            child_routes = [[customer for customer in r if customer not in route.itinerary.customers] for r in child_routes]
             idx = random.randrange(num_routes)
-            child_routes[idx] = list(route.itinerary)
+            child_routes[idx] = list(route.itinerary.customers)
             customers_in_child = {c for route in child_routes for c in route}
 
         all_customers = set(self.customers[1:])
@@ -104,7 +105,7 @@ class VRP:
             smallest_route.append(customer)
 
         child_vehicles = [
-            Vehicle(depot=self.customers[0], itinerary=route, capacity=100)
+            Vehicle(depot=self.customers[0], itinerary=Itinerary(customers=route), capacity=100)
             for route in child_routes
         ]
 
@@ -128,11 +129,11 @@ class VRP:
         """
         Troca posições de clientes adjacentes dentro de uma rota.
         """
-        itinerary = vehicle.itinerary[:]
+        itinerary = vehicle.itinerary.customers[:]
         for i in range(len(itinerary) - 1):
             if random.random() < mutation_probability:
                 itinerary[i], itinerary[i + 1] = itinerary[i + 1], itinerary[i]
-        return Vehicle(depot=vehicle.depot, itinerary=itinerary, capacity=vehicle.capacity)
+        return Vehicle(depot=vehicle.depot, itinerary=Itinerary(customers=itinerary), capacity=vehicle.capacity)
 
 
     def _mutate_interroute(self, vehicles: list[Vehicle]) -> list[Vehicle]:
@@ -140,20 +141,20 @@ class VRP:
         Move um cliente de uma rota para outra.
         """
         v1, v2 = random.sample(vehicles, 2)
-        if not v1.itinerary:
+        if not v1.itinerary.customers:
             return vehicles
 
-        customer = random.choice(v1.itinerary)
+        customer = random.choice(v1.itinerary.customers)
 
         v1_new = Vehicle(
             depot=v1.depot,
-            itinerary=[c for c in v1.itinerary if c != customer],
+            itinerary=Itinerary(customers=[c for c in v1.itinerary.customers if c != customer]),
             capacity=v1.capacity
         )
 
         v2_new = Vehicle(
             depot=v2.depot,
-            itinerary=v2.itinerary + [customer],
+            itinerary=Itinerary(customers=v2.itinerary.customers + [customer]),
             capacity=v2.capacity
         )
 

@@ -15,7 +15,7 @@ class Solution:
         return "\n".join(lines)
     
     def total_distance(self) -> float:
-        return sum(vehicle.distance for vehicle in self.vehicles)
+        return sum(vehicle.itinerary.distance for vehicle in self.vehicles)
     
     def calculate_distances(self, customer_distance_matrix: list[list[float]]):
         for vehicle in self.vehicles:
@@ -28,10 +28,10 @@ class Solution:
         for vehicle in self.vehicles:
             if not vehicle.hasAtLeastOneCustomers():
                 penalty += 1000
-            total_distance += vehicle.distance
+            total_distance += vehicle.itinerary.distance
 
         distance_median = total_distance / len(self.vehicles)
         for vehicle in self.vehicles:
-            if vehicle.distance > distance_median:
-                penalty += (vehicle.distance - distance_median) * 200
+            if vehicle.itinerary.distance > distance_median:
+                penalty += (vehicle.itinerary.distance - distance_median) * 200
         return total_distance + penalty
