@@ -25,10 +25,16 @@ class Solution:
         return [customer for vehicle in self.vehicles for customer in vehicle.itinerary]
 
     def calculate_total_cost(self) -> float:
+        distance_median: float = 0.0
         penalty = 0
         total_distance = 0
         for vehicle in self.vehicles:
             if not vehicle.hasAtLeastOneCustomers():
                 penalty += 1000
             total_distance += vehicle.distance
+
+        distance_median = total_distance / len(self.vehicles)
+        for vehicle in self.vehicles:
+            if vehicle.distance > distance_median:
+                penalty += (vehicle.distance - distance_median) * 200
         return total_distance + penalty
