@@ -1,9 +1,11 @@
 import math
 import random
+
 from customer import Customer
 import numpy as np
 from solution import Solution
 from vehicle import Vehicle
+
 
 class VRP:
     customers: list[Customer]
@@ -24,7 +26,7 @@ class VRP:
 
     def _euclidean_distance(self, a: Customer, b: Customer) -> float:
         return math.hypot(a.x - b.x, a.y - b.y)
-    
+
     def generate_initial_population(self, population_size: int, number_vehicles: int) -> list[Solution]:
         population = []
         depot = self.customers[0]
@@ -35,61 +37,102 @@ class VRP:
             shuflled = random.sample(customers, n)
             chunks = np.array_split(shuflled, number_vehicles)
 
-            vehicles = [Vehicle(depot, itinerary=list(chunk)) for chunk in chunks]
+            vehicles = [Vehicle(depot, itinerary=list(chunk))
+                        for chunk in chunks]
             solution = Solution(vehicles=vehicles)
             population.append(solution)
         return population
-    
+
     def fitness(self, solution: Solution) -> float:
         solution.calculate_distances(self.customer_distance_matrix)
         return solution.calculate_total_cost()
-    
+
     def crossover(self, population: list[Solution], population_fitness: list[float]) -> Solution:
         probability = 1 / np.array(population_fitness)
         parent1, parent2 = random.choices(population, weights=probability, k=2)
 
-        p1_flat = parent1.itineraries()
-        p2_flat = parent2.itineraries()
-        n = len(p1_flat)
+        child_routes = [list(vehicle.itinerary) for vehicle in parent1.vehicles]
 
-        start, end = sorted(random.sample(range(n), 2))
+        num_routes = len(child_routes)
+        cut_size = random.randint(1, num_routes)
+        routes_from_parent2 = random.sample(parent2.vehicles, cut_size)
 
-        child_flat = [None] * n
-        child_flat[start:end] = p1_flat[start:end]
+        customers_in_child = {customer for route in child_routes for customer in route}
 
-        pointer = 0
-        for c in p2_flat:
-            if c not in child_flat:
-                while child_flat[pointer] is not None:
-                    pointer += 1
-                child_flat[pointer] = c
+        for route in routes_from_parent2:
+            child_routes = [[customer for customer in r if customer not in route.itinerary] for r in child_routes]
+            idx = random.randrange(num_routes)
+            child_routes[idx] = list(route.itinerary)
+            customers_in_child = {c for route in child_routes for c in route}
 
-        vehicle_sizes = [len(v.itinerary) for v in parent1.vehicles]
-        vehicles = []
-        idx = 0
-        for size in vehicle_sizes:
-            vehicles.append(Vehicle(depot=self.customers[0], itinerary=child_flat[idx:idx+size], capacity=100))
-            idx += size
+        all_customers = set(self.customers[1:])
+        missing = list(all_customers - customers_in_child)
 
-        return Solution(vehicles=vehicles)
-    
+        for customer in missing:
+            smallest_route = min(child_routes, key=len)
+            smallest_route.append(customer)
+
+        child_vehicles = [
+            Vehicle(depot=self.customers[0], itinerary=route, capacity=100)
+            for route in child_routes
+        ]
+
+        return Solution(vehicles=child_vehicles)
+
     def mutate(self, solution: Solution, mutation_probability: float) -> Solution:
-        new_vehicles = []
-
-        for vehicle in solution.vehicles:
-            itinerary = vehicle.itinerary[:]
-            for i in range(len(itinerary) - 1):
-                if random.random() < mutation_probability:
-                    itinerary[i], itinerary[i + 1] = itinerary[i + 1], itinerary[i]
-            new_vehicles.append(Vehicle(depot=vehicle.depot, inerary=itinerary, capacity=vehicle.capacity))
+        """
+        Aplica mutações em uma solução do VRP.
+        - Intra-rota: troca clientes adjacentes dentro de um veículo.
+        - Inter-rota: move um cliente de um veículo para outro.
+        """
+        vehicles = [self._mutate_intraroute(v, mutation_probability) for v in solution.vehicles]
 
         if random.random() < mutation_probability:
-            v1, v2 = random.sample(new_vehicles, 2)
-            if v1.itinerary:
-                c = random.choice(v1.itinerary)
-                v1_itinerary = [x for x in v1.itinerary if x != c]
-                v2_itinerary = v2.itinerary + [c]
-                new_vehicles[new_vehicles.index(v1)] = Vehicle(depot=v1.depot, itinerary=v1_itinerary, capacity=v1.capacity)
-                new_vehicles[new_vehicles.index(v2)] = Vehicle(depot=v2.depot, itinerary=v2_itinerary, capacity=v2.capacity)
+            vehicles = self._mutate_interroute(vehicles)
 
-        return Solution(vehicles=new_vehicles)
+        return Solution(vehicles=vehicles)
+
+
+    def _mutate_intraroute(self, vehicle: Vehicle, mutation_probability: float) -> Vehicle:
+        """
+        Troca posições de clientes adjacentes dentro de uma rota.
+        """
+        itinerary = vehicle.itinerary[:]
+        for i in range(len(itinerary) - 1):
+            if random.random() < mutation_probability:
+                itinerary[i], itinerary[i + 1] = itinerary[i + 1], itinerary[i]
+        return Vehicle(depot=vehicle.depot, itinerary=itinerary, capacity=vehicle.capacity)
+
+
+    def _mutate_interroute(self, vehicles: list[Vehicle]) -> list[Vehicle]:
+        """
+        Move um cliente de uma rota para outra.
+        """
+        v1, v2 = random.sample(vehicles, 2)
+        if not v1.itinerary:
+            return vehicles
+
+        customer = random.choice(v1.itinerary)
+
+        v1_new = Vehicle(
+            depot=v1.depot,
+            itinerary=[c for c in v1.itinerary if c != customer],
+            capacity=v1.capacity
+        )
+
+        v2_new = Vehicle(
+            depot=v2.depot,
+            itinerary=v2.itinerary + [customer],
+            capacity=v2.capacity
+        )
+
+        updated = []
+        for v in vehicles:
+            if v == v1:
+                updated.append(v1_new)
+            elif v == v2:
+                updated.append(v2_new)
+            else:
+                updated.append(v)
+
+        return updated
