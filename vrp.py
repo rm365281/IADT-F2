@@ -37,38 +37,41 @@ class VRP:
         coords = np.array([[c.x, c.y] for c in self.customers])
         nn = NearestNeighbors(n_neighbors=n, algorithm="ball_tree").fit(coords)
 
+        customer_ids = [c.id for c in customers]
+        id2c = {c.id: c for c in self.customers}
+
         for _ in range(population_size):
-            unvisited = set(customers)
+            unvisited = set(customer_ids)
             vehicles: list[Vehicle] = []
 
             for _ in range(number_vehicles):
                 if not unvisited:
                     break
 
-                start = random.choice(list(unvisited))
-                unvisited.remove(start)
-                route = [start]
+                start_id  = random.choice(tuple(unvisited))
+                unvisited.remove(start_id)
+                route = [start_id]
 
-                current = start
+                current = id2c[start_id]
                 while unvisited and len(route) < n // number_vehicles + 1:
                     distances, indices = nn.kneighbors([[current.x, current.y]])
-                    next_customer = None
+                    next_customer_id = None
                     for idx in indices[0]:
-                        candidate = self.customers[idx]
-                        if candidate in unvisited:
-                            next_customer = candidate
+                        candidate_id = self.customers[idx].id
+                        if candidate_id in unvisited:
+                            next_customer_id = candidate_id
                             break
-                    if next_customer is None:
+                    if next_customer_id is None:
                         break
-                    unvisited.remove(next_customer)
-                    route.append(next_customer)
-                    current = next_customer
+                    unvisited.remove(next_customer_id)
+                    route.append(next_customer_id)
+                    current = id2c[next_customer_id]
 
-                vehicles.append(Vehicle(depot=depot, itineraries=[Itinerary(customers=route)]))
+                vehicles.append(Vehicle(depot=depot, itineraries=[Itinerary(customers=[id2c[cid] for cid in route])]))
 
             if unvisited:
-                for customer in unvisited:
-                    random.choice(vehicles).itineraries[0].customers.append(customer)
+                for cid in unvisited:
+                    random.choice(vehicles).itineraries[0].customers.append(id2c[cid])
 
             solution = Solution(vehicles=vehicles)
             population.append(solution)
@@ -81,142 +84,139 @@ class VRP:
 
     def crossover(self, population: list[Solution], population_fitness: list[float]) -> Solution:
         """
-        Performs genetic algorithm crossover to create a child solution from two parents.
-        Uses fitness-based selection and route combination strategy.
+        Seleciona 2 pais por roleta invertida, aplica CEX em arrays de IDs e reconstrói o filho.
+        Cada filho é reconstruído com a estrutura do respectivo pai (mantém nº de veículos/itinerários).
+        Aqui retornamos apenas um child (padrão do seu loop).
         """
-        # Select parents using inverse fitness weighting (lower fitness = higher probability)
-        probability = 1 / np.array(population_fitness)
-        parent1, parent2 = random.choices(population, weights=probability, k=2)
+        # seleção por probabilidade inversa (menor fitness = maior peso)
+        weights = 1 / (np.asarray(population_fitness, dtype=float) + 1e-9)
+        p1, p2 = random.choices(population, weights=weights, k=2)
 
-        # Extract all routes from parent1
-        child_routes = [list(itinerary.customers) for vehicle in parent1.vehicles for itinerary in vehicle.itineraries]
+        depot = self.customers[0]
 
-        if not child_routes:
-            return Solution(vehicles=[])
+        # flatten
+        p1_ids = self._flatten_ids(p1)
+        p2_ids = self._flatten_ids(p2)
+
+        # CEX
+        c1_ids, c2_ids = self._cycle_crossover_numpy(p1_ids, p2_ids)
+
+        # reconstrói o filho 1 com a estrutura do p1
+        struct_p1 = self._structure_of(p1)
+        child1 = self._rebuild_from(c1_ids, struct_p1, depot)
+
+        # reconstrói o filho 2 com a estrutura do p2
+        struct_p2 = self._structure_of(p2)
+        child2 = self._rebuild_from(c2_ids, struct_p2, depot)
+
+        # escolhe o melhor fitness
+        f1 = self.fitness(child1)
+        f2 = self.fitness(child2)
+        return child1 if f1 <= f2 else child2
     
-        # Select random routes from parent2 to integrate
-        num_routes = len(child_routes)
-        cut_size = random.randint(1, min(num_routes, len(parent2.vehicles)))
-        routes_from_parent2 = random.sample(parent2.vehicles, cut_size)
+    def _cycle_crossover_numpy(self, p1: np.ndarray, p2: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+        """
+        CEX em O(n) usando mapa de posições. Supõe que p1/p2 são permutações do mesmo conjunto de IDs.
+        """
+        n = len(p1)
+        c1 = np.empty(n, dtype=int); c1.fill(-1)
+        c2 = np.empty(n, dtype=int); c2.fill(-1)
 
-        # Integrate routes from parent2
-        for vehicle in routes_from_parent2:
-            vehicle_customers = [customer for itinerary in vehicle.itineraries for customer in itinerary.customers]
-        
-            # Remove customers that will be replaced
-            child_routes = [
-                [customer for customer in route if customer not in vehicle_customers]
-                for route in child_routes
-            ]
-        
-            # Insert new route
-            if child_routes:
-                idx = random.randrange(len(child_routes))
-                child_routes[idx] = vehicle_customers
+        # pos1[val] = posição de 'val' em p1
+        pos1 = np.empty(p1.max() + 1, dtype=int)
+        pos1[p1] = np.arange(n, dtype=int)
+
+        visited = np.zeros(n, dtype=bool)
+        take_from_p1 = True
+
+        for start in range(n):
+            if visited[start]:
+                continue
+            # percorre o ciclo começando em 'start'
+            idx = start
+            cycle_idxs = []
+            while not visited[idx]:
+                visited[idx] = True
+                cycle_idxs.append(idx)
+                # próximo índice: onde em p1 está o valor p2[idx]
+                idx = pos1[p2[idx]]
+
+            cycle_idxs = np.asarray(cycle_idxs, dtype=int)
+            if take_from_p1:
+                c1[cycle_idxs] = p1[cycle_idxs]
+                c2[cycle_idxs] = p2[cycle_idxs]
             else:
-                child_routes.append(vehicle_customers)
+                c1[cycle_idxs] = p2[cycle_idxs]
+                c2[cycle_idxs] = p1[cycle_idxs]
+            take_from_p1 = not take_from_p1
 
-        # Add missing customers to smallest routes
-        customers_in_child = {customer for route in child_routes for customer in route}
-        all_customers = set(self.customers[1:])
-        missing_customers = all_customers - customers_in_child
-
-        for customer in missing_customers:
-            if child_routes:
-                min(child_routes, key=len).append(customer)
-            else:
-                child_routes.append([customer])
-
-        # Create child solution with non-empty routes only
-        child_vehicles = [
-            Vehicle(depot=self.customers[0], itineraries=[Itinerary(customers=route)], capacity=100)
-            for route in child_routes if route
-        ]
-
-        return Solution(vehicles=child_vehicles)
+        return c1, c2
 
     def mutate(self, solution: Solution, mutation_probability: float) -> Solution:
         """
-        Aplica mutações em uma solução do VRP.
-        - Intra-rota: troca clientes adjacentes dentro de um veículo.
-        - Inter-rota: move um cliente de um veículo para outro.
+        Mutação em array de IDs + reconstrução com a MESMA estrutura da solução original.
         """
-        vehicles = [self._mutate_intraroute(v, mutation_probability) for v in solution.vehicles]
+        if mutation_probability <= 0:
+            return solution
 
-        if random.random() < mutation_probability:
-            vehicles = self._mutate_interroute(vehicles)
+        depot = self.customers[0]
+        struct = self._structure_of(solution)
+        ids = self._flatten_ids(solution)
 
+        ids = self._swap_mutation_numpy(ids, mutation_probability)
+
+        return self._rebuild_from(ids, struct, depot)
+
+
+    def _swap_mutation_numpy(self, arr: np.ndarray, mutation_rate: float) -> np.ndarray:
+        """
+        Troca valores em posições sorteadas. Mantém a permutação.
+        """
+        if mutation_rate <= 0:
+            return arr
+        n = len(arr)
+        mask = np.random.rand(n) < mutation_rate
+        idx = np.nonzero(mask)[0]
+        if idx.size >= 2:
+            shuffled = idx.copy()
+            np.random.shuffle(shuffled)
+            arr[idx] = arr[shuffled]
+        return arr
+    
+    def _id_to_customer(self) -> dict[int, Customer]:
+        return {c.id: c for c in self.customers}
+
+    def _structure_of(self, solution: Solution) -> list[list[int]]:
+        """
+        Estrutura = lista de veículos; para cada veículo, lista com o tamanho de cada itinerary.
+        Ex: [[5], [3, 2]] significa: veic0 com 1 itinerary de 5 clientes; veic1 com 2 itinerários (3 e 2 clientes).
+        """
+        return [[len(it.customers) for it in v.itineraries] for v in solution.vehicles]
+
+    def _flatten_ids(self, solution: Solution) -> np.ndarray:
+        """
+        Converte Solution -> array (np.ndarray) de IDs de clientes (sem depósitos).
+        A ordem segue veículos/itinerários/clients.
+        """
+        ids = []
+        for v in solution.vehicles:
+            for it in v.itineraries:
+                ids.extend([c.id for c in it.customers])
+        return np.asarray(ids, dtype=int)
+
+    def _rebuild_from(self, ids: np.ndarray, structure: list[list[int]], depot: Customer) -> Solution:
+        """
+        Reconstrói Solution a partir do array de IDs e da estrutura (quantos itinerários e seus tamanhos por veículo).
+        Reusa instâncias originais de Customer (id->Customer).
+        """
+        id2c = self._id_to_customer()
+        cursor = 0
+        vehicles: list[Vehicle] = []
+        for veh_it_sizes in structure:
+            itineraries: list[Itinerary] = []
+            for size in veh_it_sizes:
+                customers = [id2c[int(i)] for i in ids[cursor: cursor + size]]
+                cursor += size
+                itineraries.append(Itinerary(customers=customers))
+            vehicles.append(Vehicle(depot=depot, itineraries=itineraries))
         return Solution(vehicles=vehicles)
-
-
-    def _mutate_intraroute(self, vehicle: Vehicle, mutation_probability: float) -> Vehicle:
-        """
-        Troca posições de clientes adjacentes dentro de uma rota.
-        """
-        mutated_itineraries = []
-        for itinerary in vehicle.itineraries:
-            customers = itinerary.customers[:]
-            for i in range(len(customers) - 1):
-                if random.random() < mutation_probability:
-                    customers[i], customers[i + 1] = customers[i + 1], customers[i]
-            mutated_itineraries.append(Itinerary(customers=customers))
-        return Vehicle(depot=vehicle.depot, itineraries=mutated_itineraries, capacity=vehicle.capacity)
-
-
-    def _mutate_interroute(self, vehicles: list[Vehicle]) -> list[Vehicle]:
-        """
-        Move um cliente de uma rota para outra.
-        """
-        v1, v2 = random.sample(vehicles, 2)
-        
-        # Collect all customers from all itineraries of v1
-        all_customers_v1 = []
-        for itinerary in v1.itineraries:
-            all_customers_v1.extend(itinerary.customers)
-        
-        if not all_customers_v1:
-            return vehicles
-
-        customer = random.choice(all_customers_v1)
-
-        # Remove customer from v1's itineraries
-        v1_new_itineraries = []
-        for itinerary in v1.itineraries:
-            new_customers = [c for c in itinerary.customers if c != customer]
-            v1_new_itineraries.append(Itinerary(customers=new_customers))
-
-        v1_new = Vehicle(
-            depot=v1.depot,
-            itineraries=v1_new_itineraries,
-            capacity=v1.capacity
-        )
-
-        # Add customer to a random itinerary of v2 (or create new one if none exist)
-        v2_new_itineraries = []
-        for itinerary in v2.itineraries:
-            v2_new_itineraries.append(Itinerary(customers=itinerary.customers[:]))
-        
-        if v2_new_itineraries:
-            # Add to a random existing itinerary
-            random_itinerary = random.choice(v2_new_itineraries)
-            random_itinerary.customers.append(customer)
-        else:
-            # Create new itinerary with the customer
-            v2_new_itineraries.append(Itinerary(customers=[customer]))
-
-        v2_new = Vehicle(
-            depot=v2.depot,
-            itineraries=v2_new_itineraries,
-            capacity=v2.capacity
-        )
-
-        updated = []
-        for v in vehicles:
-            if v == v1:
-                updated.append(v1_new)
-            elif v == v2:
-                updated.append(v2_new)
-            else:
-                updated.append(v)
-
-        return updated

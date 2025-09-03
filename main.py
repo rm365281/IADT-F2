@@ -30,8 +30,10 @@
 # Separar o código em frontend e backend
 
 import itertools
+import time
 from customer import Customer
 from genetic_algorithm import sort_population, default_problems
+from solution import Solution
 from vrp import VRP
 
 STOP_GENERATION = False
@@ -49,17 +51,29 @@ vrp = VRP(customers=customers)
 population = vrp.generate_initial_population(POPULATION_SIZE, NUMBER_VEHICLES)
 
 generate = True
+start_time = time.time()
+
+best_solution: Solution = None
+
 while generate:
+    generation_start = time.time()
     generation = next(generation_counter)
 
     population_fitness = [vrp.fitness(individual) for individual in population]
 
     population, population_fitness = sort_population(population,  population_fitness)
 
-    best_solution = population[0]
+    current_solution = population[0]
+    current_fitness = vrp.fitness(population[0])
 
-    print(f"Generation {generation}: Best fitness = {round(best_solution.total_distance(), 2)} - Cost: {round(best_solution.calculate_total_cost())} | Solution: {best_solution}")
-
+    generation_time = time.time() - generation_start
+    total_time = time.time() - start_time
+    
+    if (best_solution is None or current_solution != best_solution or current_fitness < best_fitness):
+        print(f"Generation {generation}: Best distance = {round(current_solution.total_distance(), 2)} - Best fitness: {round(current_solution.calculate_total_cost(), 2)} | Time: {generation_time:.2f}s | Total: {total_time:.2f}s")
+        best_solution = current_solution
+        best_fitness = current_fitness
+    
     new_population = [population[0]]
 
     while len(new_population) < POPULATION_SIZE:

@@ -22,7 +22,6 @@ class Solution:
             vehicle.calculate_distance(customer_distance_matrix)
 
     def calculate_total_cost(self) -> float:
-        distance_median: float = 0.0
         penalty = 0
         total_distance = 0
         for vehicle in self.vehicles:

@@ -14,13 +14,12 @@ class Vehicle:
         self.full_itineraries = [Itinerary(customers=([self.depot] + itinerary.customers + [self.depot])) for itinerary in self.itineraries]
     
     def calculate_distance(self, customer_distance_matrix: list[list[float]]) -> None:
-        distance = 0
         for full_itinerary in self.full_itineraries:
-            full_itinerary_length = len(full_itinerary.customers)
-            for customer_index in range(full_itinerary_length):
-                customer_a = full_itinerary.customers[customer_index]
-                customer_b = full_itinerary.customers[(customer_index + 1) % full_itinerary_length]
-                distance += customer_distance_matrix[customer_a.id][customer_b.id]
+            distance = 0.0
+            for i in range(len(full_itinerary.customers) - 1):
+                a = full_itinerary.customers[i]
+                b = full_itinerary.customers[i + 1]
+                distance += customer_distance_matrix[a.id][b.id]
             full_itinerary.distance = distance
 
     def hasAtLeastOneCustomersInEachItinerary(self) -> bool:
