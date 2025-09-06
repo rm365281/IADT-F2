@@ -1,9 +1,12 @@
 # Restrições
 #
-# 1 - Prioridade diferente para entregas (medicamentos criticos vs entrega regulares) | 1 ou 0
+# 1 - Prioridade diferente para entregas (medicamentos criticos vs entrega regulares) | 1 ou 0 - ok
 # 2 - Capacidade do veiculo
 # 3 - Autonomia (distancia máxima percorrida)
-# 4 - Multiplos veiculos - OK
+# 4 - Multiplos veiculos - ok
+
+# Restrições extras implementadas
+# Equilibrar a distancia percorrida por cada veiculo
 
 # Restrições extras (opcionais)
 # 13 - Carga horaria do motorista (ex: limites de horas de condução)
@@ -30,6 +33,7 @@
 # Separar o código em frontend e backend
 
 import itertools
+import random
 import time
 import math
 import copy
@@ -46,7 +50,7 @@ POPULATION_SIZE = 100
 MUTATION_PROBABILITY = 0.5
 
 cities_locations = default_problems[15]
-nodes: list[Node] = [Node(id=i, x=city[0], y=city[1]) for i, city in enumerate(cities_locations)]
+nodes: list[Node] = [Node(identifier=i, x=city[0], y=city[1], priority=random.randint(0, 1)) for i, city in enumerate(cities_locations)]
 
 g = Graph()
 for from_node in nodes:

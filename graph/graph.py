@@ -28,7 +28,7 @@ class Graph:
 
     def get_node(self, node_id: int) -> Node:
         for node in self._nodes:
-            if node.id == node_id:
+            if node.identifier == node_id:
                 return node
         raise ValueError(f"Node {node_id} does not exist.")
 

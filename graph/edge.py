@@ -8,6 +8,6 @@ class Edge:
         self.distance: float = distance
 
     def __str__(self) -> str:
-        return f"Edge(from={self.from_node.id}, to={self.to_node.id}, distance={self.distance})"
+        return f"Edge(from={self.from_node.identifier}, to={self.to_node.identifier}, distance={self.distance})"
     
     __repr__ = __str__

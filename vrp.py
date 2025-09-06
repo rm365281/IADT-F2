@@ -12,53 +12,53 @@ class VRP:
         self.population_size = population_size
         self.mutation_probability = mutation_probability
         self.graph = graph
+        self.depot = graph.get_node(0)
 
     def generate_initial_population(self) -> list[Solution]:
-        depot: Node = self.graph.get_node(0)
         customers: list[Node] = self.graph.get_nodes()[1:]
         solutions: list[Solution] = list()
         for _ in range(self.population_size):
             shuffled_customers: list[Node] = random.sample(customers, len(customers))
-            customer_ids: list[int] = [customer.id for customer in shuffled_customers]
+            customer_ids: list[int] = [customer.identifier for customer in shuffled_customers]
             chunks = np.array_split(customer_ids, self.number_vehicles)
-            vehicles = [Vehicle(depot_id=depot.id, node_ids=[chunk.tolist()]) for chunk in chunks]
+            vehicles = [Vehicle(depot_id=self.depot.identifier, node_ids=[chunk.tolist()]) for chunk in chunks]
             solution = Solution(vehicles=vehicles)
             solutions.append(solution)
         return solutions
 
     def fitness(self, solution: Solution) -> None:
+        penalty: float = 0
+        total_distance = 0.0
+
         for vehicle in solution.vehicles:
-            vehicle.distance = sum(
-                self.graph.get_edge(self.graph.get_node(vehicle.full_itineraries[0][i]),
-                                    self.graph.get_node(vehicle.full_itineraries[0][i + 1])).distance
-                for i in range(len(vehicle.full_itineraries[0]) - 1)
-            )
-        solution.calculate_total_cost()
+            full_itinerary = vehicle.full_itineraries[0]
+            vehicle.distance = 0.0
+            has_non_priority_customer_earlier_in_itinerary = False
+            for i in range(len(full_itinerary) - 1):
+                from_node: Node = self.graph.get_node(full_itinerary[i])
+                to_node: Node = self.graph.get_node(full_itinerary[i + 1])
+
+                if from_node.priority == 1 and has_non_priority_customer_earlier_in_itinerary:
+                    penalty += 50
+                if from_node.priority == 0 and self.depot != from_node:
+                    has_non_priority_customer_earlier_in_itinerary = True
+
+                vehicle.distance += self.graph.get_edge(from_node, to_node).distance
+            total_distance += vehicle.distance
+
+        distance_median = total_distance / len(solution.vehicles)
+        for vehicle in solution.vehicles:
+            penalty += abs(vehicle.distance - distance_median)
+
+        solution.fitness = total_distance + penalty
 
     def sort_population(self, population: list[Solution]) -> list[Solution]:
-        """
-        Sort a population based on fitness values.
-
-        Parameters:
-        - population (List[List[Tuple[float, float]]]): The population of solutions, where each solution is represented as a list.
-        - fitness (List[float]): The corresponding fitness values for each solution in the population.
-
-        Returns:
-        Tuple[List[List[Tuple[float, float]]], List[float]]: A tuple containing the sorted population and corresponding sorted fitness values.
-        """
         return sorted(population, key=lambda solution: solution.fitness)
 
     def crossover(self, population: list[Solution]) -> Solution:
-        """
-        Seleciona 2 pais por roleta invertida, aplica CEX em arrays de IDs e reconstrói o filho.
-        Cada filho é reconstruído com a estrutura do respectivo pai (mantém nº de veículos/itinerários).
-        Aqui retornamos apenas um child (padrão do seu loop).
-        """
         population_fitness = [ind.fitness for ind in population]
         weights = 1 / (np.asarray(population_fitness, dtype=float) + 1e-9)
         p1, p2 = random.choices(population, weights=weights, k=2)
-
-        depot: Node = self.graph.get_node(0)
 
         number_vehicles = len(p1.vehicles)
         p1_flat_routes = p1.flatten_routes()
@@ -82,7 +82,7 @@ class VRP:
 
         vehicles = []
         for chunk in chunks:
-            vehicles.append(Vehicle(depot_id=depot.id, node_ids=[chunk.tolist()]))
+            vehicles.append(Vehicle(depot_id=self.depot.identifier, node_ids=[chunk.tolist()]))
 
         return Solution(vehicles=vehicles)
     

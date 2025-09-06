@@ -20,16 +20,6 @@ class Solution:
     def total_distance(self) -> float:
         return sum(vehicle.distance for vehicle in self.vehicles)
     
-    def calculate_total_cost(self) -> None:
-        penalty: float = 0
-        total_distance = self.total_distance()
-
-        distance_median = total_distance / len(self.vehicles)
-        for vehicle in self.vehicles:
-            if vehicle.distance > distance_median:
-                penalty += (vehicle.distance - distance_median) * 10
-        self.fitness = total_distance + penalty
-
     def flatten_routes(self) -> list[int]:
         route: list[int] = []
         for vehicle in self.vehicles:
