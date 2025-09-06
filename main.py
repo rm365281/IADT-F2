@@ -31,7 +31,10 @@
 
 import itertools
 import time
-from customer import Customer
+import math
+from graph import Node
+from graph import Edge
+from graph import Graph
 from genetic_algorithm import sort_population, default_problems
 from solution import Solution
 from vrp import VRP
@@ -42,13 +45,24 @@ POPULATION_SIZE = 100
 MUTATION_PROBABILITY = 0.5
 
 cities_locations = default_problems[15]
-customers: list[Customer] = [Customer(id=i, city=city) for i, city in enumerate(cities_locations)]
+nodes: list[Node] = [Node(id=i, x=city[0], y=city[1]) for i, city in enumerate(cities_locations)]
+
+g = Graph()
+for node in nodes:
+    g.add_node(node)
+
+for from_node in nodes:
+    for to_node in nodes:
+        if from_node != to_node:
+            distance: float = math.hypot(from_node.x - to_node.x, from_node.y - to_node.y)
+            edge = Edge(from_node=from_node, to_node=to_node, distance=distance)
+            g.add_edge(edge)
 
 generation_counter = itertools.count(start=1)
 
-vrp = VRP(customers=customers)
+vrp = VRP()
 
-population = vrp.generate_initial_population(POPULATION_SIZE, NUMBER_VEHICLES)
+population: list[Solution] = vrp.generate_initial_population(nodes, POPULATION_SIZE, NUMBER_VEHICLES)
 
 generate = True
 start_time = time.time()
@@ -59,26 +73,23 @@ while generate:
     generation_start = time.time()
     generation = next(generation_counter)
 
-    population_fitness = [vrp.fitness(individual) for individual in population]
+    for individual in population:
+        vrp.fitness(individual, g)
 
-    population, population_fitness = sort_population(population,  population_fitness)
+    population = vrp.sort_population(population=population)
 
-    current_solution = population[0]
-    current_fitness = vrp.fitness(population[0])
+    best_solution = population[0]
 
     generation_time = time.time() - generation_start
     total_time = time.time() - start_time
     
-    if (best_solution is None or current_solution != best_solution or current_fitness < best_fitness):
-        print(f"Generation {generation}: Best distance = {round(current_solution.total_distance(), 2)} - Best fitness: {round(current_solution.calculate_total_cost(), 2)} | Time: {generation_time:.2f}s | Total: {total_time:.2f}s")
-        best_solution = current_solution
-        best_fitness = current_fitness
+    print(f"Generation {generation}: Best distance = {round(best_solution.total_distance(), 2)} - Best fitness: {round(best_solution.fitness, 2)} | Time: {generation_time:.2f}s | Total: {total_time:.2f}s | Solution: {best_solution}")
     
     new_population = [population[0]]
 
     while len(new_population) < POPULATION_SIZE:
-        child = vrp.crossover(population, population_fitness)
-        child = vrp.mutate(child, MUTATION_PROBABILITY)
+        child = vrp.crossover(population, g)
+        #child = vrp.mutate(child, MUTATION_PROBABILITY, g)
         new_population.append(child)
 
     population = new_population

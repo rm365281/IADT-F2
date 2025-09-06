@@ -1,54 +1,19 @@
 from customer import Customer
 from itinerary import Itinerary
+from graph.node import Node
 
 class Vehicle:
-    depot: Customer
-    itineraries: list[Itinerary]
+    depot_id: int
+    itineraries: list[list[int]]
     capacity: int = 100
-    full_itineraries: list[Itinerary]
+    full_itineraries: list[list[int]]
+    distance: float = 0.0
 
-    def __init__(self, depot: Customer, itineraries: list[Itinerary], capacity: int = 100) -> None:
-        self.depot = depot
-        self.itineraries = itineraries
+    def __init__(self, depot_id: int, node_ids: list[list[int]], capacity: int = 100) -> None:
+        self.depot_id = depot_id
+        self.itineraries = node_ids
         self.capacity = capacity
-        self.full_itineraries = [Itinerary(customers=([self.depot] + itinerary.customers + [self.depot])) for itinerary in self.itineraries]
-    
-    def calculate_distance(self, customer_distance_matrix: list[list[float]]) -> None:
-        for full_itinerary in self.full_itineraries:
-            distance = 0.0
-            for i in range(len(full_itinerary.customers) - 1):
-                a = full_itinerary.customers[i]
-                b = full_itinerary.customers[i + 1]
-                distance += customer_distance_matrix[a.id][b.id]
-            full_itinerary.distance = distance
+        self.full_itineraries = [[depot_id] + itinerary + [depot_id] for itinerary in self.itineraries]
 
-    def hasAtLeastOneCustomersInEachItinerary(self) -> bool:
-        for itinerary in self.itineraries:
-            if not itinerary.hasAtLeastOneCustomers():
-                return False
-        return True
-    
-    def total_distance(self) -> float:
-        return sum(itinerary.distance for itinerary in self.full_itineraries)
-
-    def __str__(self) -> str:
-        lines = []
-        
-        total_customers = 0
-        total_distance = 0.0
-        all_customers = []
-        
-        for itinerary in self.full_itineraries:
-            total_customers += len(itinerary.customers)
-            all_customers.extend(itinerary.customers)
-            total_distance += itinerary.distance
-        
-        lines.append(f"Vehicle (capacity={self.capacity}, customers={total_customers}, distance={round(total_distance, 2)}):")
-        
-        if not all_customers:
-            lines.append("  [empty]")
-        else:
-            for customer in all_customers:
-                lines.append(f"  {customer}")
-        
-        return "\n".join(lines)
+    def __str__(self):
+        return f"Vehicle(depot_id={self.depot_id}, itineraries={self.itineraries}, capacity={self.capacity}, distance={self.distance})"

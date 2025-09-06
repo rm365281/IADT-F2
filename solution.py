@@ -1,10 +1,14 @@
 from dataclasses import dataclass
-from customer import Customer
+
+import numpy as np
 from vehicle import Vehicle
 
-@dataclass(frozen=True)
 class Solution:
     vehicles: list[Vehicle]
+    fitness: float = 0.0
+
+    def __init__(self, vehicles: list[Vehicle]) -> None:
+        self.vehicles = vehicles
 
     def __str__(self) -> None:
         lines = []
@@ -15,23 +19,21 @@ class Solution:
         return "\n".join(lines)
     
     def total_distance(self) -> float:
-        return sum(vehicle.total_distance() for vehicle in self.vehicles)
+        return sum(vehicle.distance for vehicle in self.vehicles)
     
-    def calculate_distances(self, customer_distance_matrix: list[list[float]]) -> None:
-        for vehicle in self.vehicles:
-            vehicle.calculate_distance(customer_distance_matrix)
-
     def calculate_total_cost(self) -> float:
-        penalty = 0
-        total_distance = 0
-        for vehicle in self.vehicles:
-            if not vehicle.hasAtLeastOneCustomersInEachItinerary():
-                penalty += 1000
-            for itinerary in vehicle.full_itineraries:
-                total_distance += itinerary.distance
+        penalty: float = 0
+        total_distance = self.total_distance()
 
         distance_median = total_distance / len(self.vehicles)
         for vehicle in self.vehicles:
-            if vehicle.total_distance() > distance_median:
-                penalty += (vehicle.total_distance() - distance_median) * 200
-        return total_distance + penalty
+            if vehicle.distance > distance_median:
+                penalty += (vehicle.distance - distance_median) * 10
+        self.fitness = total_distance + penalty
+
+    def flatten_routes(self) -> list[int]:
+        route: list[int] = []
+        for vehicle in self.vehicles:
+            for itinerary in vehicle.itineraries:
+                route += itinerary
+        return route
