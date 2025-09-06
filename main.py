@@ -3,7 +3,7 @@
 # 1 - Prioridade diferente para entregas (medicamentos criticos vs entrega regulares) | 1 ou 0
 # 2 - Capacidade do veiculo
 # 3 - Autonomia (distancia máxima percorrida)
-# 4 - Multiplos veiculos
+# 4 - Multiplos veiculos - OK
 
 # Restrições extras (opcionais)
 # 13 - Carga horaria do motorista (ex: limites de horas de condução)
@@ -32,15 +32,16 @@
 import itertools
 import time
 import math
+import copy
 from graph import Node
 from graph import Edge
 from graph import Graph
-from genetic_algorithm import sort_population, default_problems
+from genetic_algorithm import default_problems
 from solution import Solution
 from vrp import VRP
 
 STOP_GENERATION = False
-NUMBER_VEHICLES = 2
+NUMBER_VEHICLES = 3
 POPULATION_SIZE = 100
 MUTATION_PROBABILITY = 0.5
 
@@ -48,9 +49,6 @@ cities_locations = default_problems[15]
 nodes: list[Node] = [Node(id=i, x=city[0], y=city[1]) for i, city in enumerate(cities_locations)]
 
 g = Graph()
-for node in nodes:
-    g.add_node(node)
-
 for from_node in nodes:
     for to_node in nodes:
         if from_node != to_node:
@@ -60,9 +58,9 @@ for from_node in nodes:
 
 generation_counter = itertools.count(start=1)
 
-vrp = VRP()
+vrp = VRP(g, POPULATION_SIZE, NUMBER_VEHICLES, MUTATION_PROBABILITY)
 
-population: list[Solution] = vrp.generate_initial_population(nodes, POPULATION_SIZE, NUMBER_VEHICLES)
+population: list[Solution] = vrp.generate_initial_population()
 
 generate = True
 start_time = time.time()
@@ -74,7 +72,7 @@ while generate:
     generation = next(generation_counter)
 
     for individual in population:
-        vrp.fitness(individual, g)
+        vrp.fitness(individual)
 
     population = vrp.sort_population(population=population)
 
@@ -85,11 +83,11 @@ while generate:
     
     print(f"Generation {generation}: Best distance = {round(best_solution.total_distance(), 2)} - Best fitness: {round(best_solution.fitness, 2)} | Time: {generation_time:.2f}s | Total: {total_time:.2f}s | Solution: {best_solution}")
     
-    new_population = [population[0]]
+    new_population = [copy.deepcopy(population[0])]
 
     while len(new_population) < POPULATION_SIZE:
-        child = vrp.crossover(population, g)
-        #child = vrp.mutate(child, MUTATION_PROBABILITY, g)
+        child = vrp.crossover(population)
+        child = vrp.mutate(child)
         new_population.append(child)
 
     population = new_population

@@ -7,31 +7,34 @@ from solution import Solution
 from vehicle import Vehicle
 
 class VRP:
+    def __init__(self, graph: Graph, population_size: int, number_vehicles: int, mutation_probability: float = 0.5) -> None:
+        self.number_vehicles = number_vehicles
+        self.population_size = population_size
+        self.mutation_probability = mutation_probability
+        self.graph = graph
 
-    def generate_initial_population(self, nodes: list[Node], population_size: int, number_vehicles: int) -> list[Solution]:
-        depot: Node = nodes[0]
-        customers: list[Node] = nodes[1:]
+    def generate_initial_population(self) -> list[Solution]:
+        depot: Node = self.graph.get_node(0)
+        customers: list[Node] = self.graph.get_nodes()[1:]
         solutions: list[Solution] = list()
-        for _ in range(population_size):
-            customers: list[Node] = random.sample(customers, len(customers))
-            node_ids: list[int] = []
-            for node in customers:
-                node_ids.append(node.id)
-            vehicle = Vehicle(depot_id=depot.id, node_ids=[node_ids])
-            solution = Solution(vehicles=[vehicle])
+        for _ in range(self.population_size):
+            shuffled_customers: list[Node] = random.sample(customers, len(customers))
+            customer_ids: list[int] = [customer.id for customer in shuffled_customers]
+            chunks = np.array_split(customer_ids, self.number_vehicles)
+            vehicles = [Vehicle(depot_id=depot.id, node_ids=[chunk.tolist()]) for chunk in chunks]
+            solution = Solution(vehicles=vehicles)
             solutions.append(solution)
         return solutions
-    
-    def fitness(self, solution: Solution, graph: Graph) -> None:
+
+    def fitness(self, solution: Solution) -> None:
         for vehicle in solution.vehicles:
-            full_itinerary = vehicle.full_itineraries[0]
-            for i in range(len(full_itinerary)):
-                from_node: Node = graph.get_node(full_itinerary[i])
-                if i + 1 < len(full_itinerary):
-                    to_node: Node = graph.get_node(full_itinerary[i + 1])
-                    vehicle.distance += graph.get_edge(from_node, to_node).distance
+            vehicle.distance = sum(
+                self.graph.get_edge(self.graph.get_node(vehicle.full_itineraries[0][i]),
+                                    self.graph.get_node(vehicle.full_itineraries[0][i + 1])).distance
+                for i in range(len(vehicle.full_itineraries[0]) - 1)
+            )
         solution.calculate_total_cost()
-    
+
     def sort_population(self, population: list[Solution]) -> list[Solution]:
         """
         Sort a population based on fitness values.
@@ -43,131 +46,64 @@ class VRP:
         Returns:
         Tuple[List[List[Tuple[float, float]]], List[float]]: A tuple containing the sorted population and corresponding sorted fitness values.
         """
+        return sorted(population, key=lambda solution: solution.fitness)
 
-        sorted_solutions: list[Solution] = sorted(population, key=lambda solution: solution.fitness)
-
-        return sorted_solutions
-
-    def crossover(self, population: list[Solution], graph: Graph) -> Solution:
+    def crossover(self, population: list[Solution]) -> Solution:
         """
         Seleciona 2 pais por roleta invertida, aplica CEX em arrays de IDs e reconstrói o filho.
         Cada filho é reconstruído com a estrutura do respectivo pai (mantém nº de veículos/itinerários).
         Aqui retornamos apenas um child (padrão do seu loop).
         """
-        # seleção por probabilidade inversa (menor fitness = maior peso)
         population_fitness = [ind.fitness for ind in population]
         weights = 1 / (np.asarray(population_fitness, dtype=float) + 1e-9)
         p1, p2 = random.choices(population, weights=weights, k=2)
 
-        depot: Node = graph.get_node(0)
+        depot: Node = self.graph.get_node(0)
 
-        length = len(p1.flatten_routes())
+        number_vehicles = len(p1.vehicles)
+        p1_flat_routes = p1.flatten_routes()
+        flatten_routes_length = len(p1_flat_routes)
 
         # Choose two random indices for the crossover
-        start_index = random.randint(0, length - 1)
-        end_index = random.randint(start_index + 1, length)
+        start_index = random.randint(0, flatten_routes_length - 1)
+        end_index = random.randint(start_index + 1, flatten_routes_length)
 
         # Initialize the child with a copy of the substring from parent1
-        child = p1.flatten_routes()[start_index:end_index]
+        child = p1_flat_routes[start_index:end_index]
 
         # Fill in the remaining positions with genes from parent2
-        remaining_positions = [i for i in range(length) if i < start_index or i >= end_index]
+        remaining_positions = [i for i in range(flatten_routes_length) if i < start_index or i >= end_index]
         remaining_genes = [gene for gene in p2.flatten_routes() if gene not in child]
 
         for position, gene in zip(remaining_positions, remaining_genes):
             child.insert(position, gene)
 
-        vehicle = Vehicle(depot_id=depot.id, node_ids=[child])
-        return Solution(vehicles=[vehicle])
+        chunks = np.array_split(child, number_vehicles)
+
+        vehicles = []
+        for chunk in chunks:
+            vehicles.append(Vehicle(depot_id=depot.id, node_ids=[chunk.tolist()]))
+
+        return Solution(vehicles=vehicles)
     
-    def _cycle_crossover_numpy(self, p1: list[int], p2: list[int]) -> tuple[list[int], list[int]]:
-        """
-        CEX em O(n) usando mapa de posições. Supõe que p1/p2 são permutações do mesmo conjunto de IDs.
-        """
-        n = len(p1)
-        c1: list[int] = []
-        c2: list[int] = []
-
-        # pos1[val] = posição de 'val' em p1
-        pos1 = np.empty(p1.max() + 1, dtype=int)
-        pos1[p1] = np.arange(n, dtype=int)
-
-        visited: list[bool] = [False] * n
-        take_from_p1 = True
-
-        for start in range(n):
-            if visited[start]:
-                continue
-            # percorre o ciclo começando em 'start'
-            idx = start
-            cycle_idxs = []
-            while not visited[idx]:
-                visited[idx] = True
-                cycle_idxs.append(idx)
-                # próximo índice: onde em p1 está o valor p2[idx]
-                idx = pos1[p2[idx]]
-
-            cycle_idxs = np.asarray(cycle_idxs, dtype=int)
-            if take_from_p1:
-                c1[cycle_idxs] = p1[cycle_idxs]
-                c2[cycle_idxs] = p2[cycle_idxs]
-            else:
-                c1[cycle_idxs] = p2[cycle_idxs]
-                c2[cycle_idxs] = p1[cycle_idxs]
-            take_from_p1 = not take_from_p1
-
-        return c1, c2
-
-    def mutate(self, solution: Solution, mutation_probability: float, g: Graph) -> Solution:
-        """
-        Mutação em array de IDs + reconstrução com a MESMA estrutura da solução original.
-        """
-        if mutation_probability <= 0:
+    def mutate(self, solution: Solution) -> Solution:
+        if self.mutation_probability <= 0:
             return solution
 
-        depot = g.get_node(0)
-        struct = self._structure_of(solution)
-        ids = solution.flatten_routes()
+        for vehicle in solution.vehicles:
+            itinerary = vehicle.itineraries[0][:]
+            for i in range(len(itinerary) - 1):
+                if random.random() < self.mutation_probability:
+                    itinerary[i], itinerary[i + 1] = itinerary[i + 1], itinerary[i]
+            vehicle.itineraries = [itinerary]
 
-        ids = self._swap_mutation_numpy(ids, mutation_probability)
+        if random.random() < self.mutation_probability:
+            v1, v2 = random.sample(solution.vehicles, 2)
+            if v1.itineraries[0]:
+                c = random.choice(v1.itineraries[0])
+                v1_itinerary = [x for x in v1.itineraries[0] if x != c]
+                v2_itinerary = v2.itineraries[0] + [c]
+                v1.itineraries = [v1_itinerary]
+                v2.itineraries = [v2_itinerary]
 
-        return self._rebuild_from(ids, struct, depot)
-
-
-    def _swap_mutation_numpy(self, arr: np.ndarray, mutation_rate: float) -> np.ndarray:
-        """
-        Troca valores em posições sorteadas. Mantém a permutação.
-        """
-        if mutation_rate <= 0:
-            return arr
-        n = len(arr)
-        mask = np.random.rand(n) < mutation_rate
-        idx = np.nonzero(mask)[0]
-        if idx.size >= 2:
-            shuffled = idx.copy()
-            np.random.shuffle(shuffled)
-            arr[idx] = arr[shuffled]
-        return arr
-    
-    def _structure_of(self, solution: Solution) -> list[list[int]]:
-        """
-        Estrutura = lista de veículos; para cada veículo, lista com o tamanho de cada itinerary.
-        Ex: [[5], [3, 2]] significa: veic0 com 1 itinerary de 5 clientes; veic1 com 2 itinerários (3 e 2 clientes).
-        """
-        return [[len(it) for it in v.itineraries] for v in solution.vehicles]
-
-    def _rebuild_from(self, ids: np.ndarray, structure: list[list[int]], depot: Node) -> Solution:
-        """
-        Reconstrói Solution a partir do array de IDs e da estrutura (quantos itinerários e seus tamanhos por veículo).
-        Reusa instâncias originais de Customer (id->Customer).
-        """
-        cursor = 0
-        vehicles: list[Vehicle] = []
-        for veh_it_sizes in structure:
-            itineraries: list[list[int]] = []
-            for size in veh_it_sizes:
-                node_ids = [i for i in ids[cursor: cursor + size]]
-                cursor += size
-                itineraries.append(node_ids)
-            vehicles.append(Vehicle(depot_id=depot, node_ids=itineraries))
-        return Solution(vehicles=vehicles)
+        return solution

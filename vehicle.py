@@ -1,7 +1,3 @@
-from customer import Customer
-from itinerary import Itinerary
-from graph.node import Node
-
 class Vehicle:
     depot_id: int
     itineraries: list[list[int]]
@@ -16,4 +12,4 @@ class Vehicle:
         self.full_itineraries = [[depot_id] + itinerary + [depot_id] for itinerary in self.itineraries]
 
     def __str__(self):
-        return f"Vehicle(depot_id={self.depot_id}, itineraries={self.itineraries}, capacity={self.capacity}, distance={self.distance})"
+        return f"Vehicle(depot_id={self.depot_id}, itineraries={self.full_itineraries}, capacity={self.capacity}, distance={self.distance})"

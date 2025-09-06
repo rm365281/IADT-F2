@@ -17,9 +17,7 @@ class Graph:
         
         self._nodes.append(node)
 
-        return node
-    
-    def add_edge(self, edge: Edge) -> Edge:
+    def add_edge(self, edge: Edge) -> None:
         if edge.from_node not in self:
             self.add_node(edge.from_node)
 
@@ -28,13 +26,11 @@ class Graph:
 
         self._edges.append(edge)
 
-        return edge
-    
-    def get_node(self, id: int) -> Node:
+    def get_node(self, node_id: int) -> Node:
         for node in self._nodes:
-            if node.id == id:
+            if node.id == node_id:
                 return node
-        raise ValueError(f"Node {id} does not exist.")
+        raise ValueError(f"Node {node_id} does not exist.")
 
     def get_edge(self, from_node: Node, to_node: Node) -> Edge:
         for edge in self._edges:
@@ -44,7 +40,10 @@ class Graph:
     
     def get_edges(self) -> list[Edge]:
         return self._edges
-    
+
+    def get_nodes(self) -> list[Node]:
+        return self._nodes
+
     def __contains__(self, node: Node) -> bool:
         return node in self._nodes
     

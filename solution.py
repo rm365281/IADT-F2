@@ -10,9 +10,8 @@ class Solution:
     def __init__(self, vehicles: list[Vehicle]) -> None:
         self.vehicles = vehicles
 
-    def __str__(self) -> None:
-        lines = []
-        lines.append(f"Number of vehicles: {len(self.vehicles)}")
+    def __str__(self) -> str:
+        lines = [f"Number of vehicles: {len(self.vehicles)}"]
         for v_idx, vehicle in enumerate(self.vehicles, start=1):
             vehicle_str = str(vehicle).replace("Vehicle", f"Vehicle {v_idx}")
             lines.append(f"  {vehicle_str}")
@@ -21,7 +20,7 @@ class Solution:
     def total_distance(self) -> float:
         return sum(vehicle.distance for vehicle in self.vehicles)
     
-    def calculate_total_cost(self) -> float:
+    def calculate_total_cost(self) -> None:
         penalty: float = 0
         total_distance = self.total_distance()
 
