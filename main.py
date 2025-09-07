@@ -91,7 +91,7 @@ while generate:
 
     while len(new_population) < POPULATION_SIZE:
         child = vrp.crossover(population)
-        #child = vrp.mutate(child)
+        child = vrp.mutate(child)
         new_population.append(child)
 
     population = new_population

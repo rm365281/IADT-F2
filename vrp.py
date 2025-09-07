@@ -22,45 +22,50 @@ class VRP:
         for _ in range(self.population_size):
             shuffled_customers: list[Node] = random.sample(customers, len(customers))
             customer_ids: list[int] = [customer.identifier for customer in shuffled_customers]
-            chunks = np.array_split(customer_ids, self.number_vehicles)
-            vehicles = self.build_itinerary(chunks)
+            vehicles = self.build_vehicles(customer_ids)
             solution = Solution(vehicles=vehicles)
             solutions.append(solution)
         return solutions
 
-    def build_itinerary(self, chunks: list[np.ndarray[Any, np.dtype[Any]]]) -> list[Any]:
+    def build_vehicles(self, customer_ids: list[int]) -> list[Any]:
         vehicles = []
+        chunks = np.array_split(customer_ids, self.number_vehicles)
         for chunk in chunks:
-            node_ids: list[int] = []
             customer_ids = chunk.tolist()
-            from_node = self.depot  # inicia o from_node com o depot
-            distance = 0.0
-            itineraries: list[list[int]] = []
-            for i in range(len(chunk)):
-                to_node = self.graph.get_node(customer_ids[i])
-
-                if to_node == self.depot:
-                    raise ValueError("Crossover resulted in a route containing the depot as a customer.")
-
-                step_distance = self.graph.get_edge(from_node, to_node).distance
-
-                from_node = self.graph.get_node(customer_ids[i])  # atualiza o from_node com o valor do to_node pois será a origem na proxima iteração dentro do loop
-
-                depot_step_distance = 0.0
-                if from_node != self.depot:
-                    depot_step_distance = self.graph.get_edge(from_node, self.depot).distance
-
-                if distance + step_distance + depot_step_distance > self.vehicle_autonomy:  # se a distancia acumulada for maior que a autonomia do veiculo
-                    itineraries.append(node_ids)  # adiciona o itinerario atual na lista de itinerarios
-                    from_node = self.depot  # reseta o from_node para o depot
-                    distance = 0.0  # reseta a distancia acumulada
-                    node_ids = []  # reseta a lista de node_ids para iniciar um novo itinerario
-                distance += step_distance
-                node_ids.append(customer_ids[i])
-            itineraries.append(node_ids)
+            itineraries = self.build_itineraries(customer_ids)
 
             vehicles.append(Vehicle(depot_id=self.depot.identifier, itineraries=itineraries, autonomy=self.vehicle_autonomy))
         return vehicles
+
+    def build_itineraries(self, customer_ids) -> list[list[int]]:
+        node_ids: list[int] = []
+        from_node = self.depot  # inicia o from_node com o depot
+        distance = 0.0
+        itineraries: list[list[int]] = []
+        for i in range(len(customer_ids)):
+            to_node = self.graph.get_node(customer_ids[i])
+
+            if to_node == self.depot:
+                raise ValueError("Crossover resulted in a route containing the depot as a customer.")
+
+            step_distance = self.graph.get_edge(from_node, to_node).distance
+
+            from_node = self.graph.get_node(customer_ids[
+                                                i])  # atualiza o from_node com o valor do to_node pois será a origem na proxima iteração dentro do loop
+
+            depot_step_distance = 0.0
+            if from_node != self.depot:
+                depot_step_distance = self.graph.get_edge(from_node, self.depot).distance
+
+            if distance + step_distance + depot_step_distance > self.vehicle_autonomy:  # se a distancia acumulada for maior que a autonomia do veiculo
+                itineraries.append(node_ids)  # adiciona o itinerario atual na lista de itinerarios
+                from_node = self.depot  # reseta o from_node para o depot
+                distance = 0.0  # reseta a distancia acumulada
+                node_ids = []  # reseta a lista de node_ids para iniciar um novo itinerario
+            distance += step_distance
+            node_ids.append(customer_ids[i])
+        itineraries.append(node_ids)
+        return itineraries
 
     def fitness(self, solution: Solution) -> None:
         penalty: float = 0
@@ -101,7 +106,6 @@ class VRP:
         weights = 1 / (np.asarray(population_fitness, dtype=float) + 1e-9)
         p1, p2 = random.choices(population, weights=weights, k=2)
 
-        number_vehicles = len(p1.vehicles)
         p1_flat_routes: list[int] = p1.flatten_routes()
         flatten_routes_length = len(p1_flat_routes)
 
@@ -119,9 +123,7 @@ class VRP:
         for position, gene in zip(remaining_positions, remaining_genes):
             child.insert(position, gene)
 
-        chunks = np.array_split(child, number_vehicles)
-
-        vehicles = self.build_itinerary(chunks)
+        vehicles = self.build_vehicles(child)
 
         return Solution(vehicles=vehicles)
     
@@ -130,7 +132,7 @@ class VRP:
             return solution
 
         for vehicle in solution.vehicles:
-            itinerary = vehicle.itineraries[0][:]
+            itinerary = vehicle.flatten_itineraries()[:]
             for i in range(len(itinerary) - 1):
                 if random.random() < self.mutation_probability:
                     itinerary[i], itinerary[i + 1] = itinerary[i + 1], itinerary[i]
@@ -138,11 +140,11 @@ class VRP:
 
         if random.random() < self.mutation_probability:
             v1, v2 = random.sample(solution.vehicles, 2)
-            if v1.itineraries[0]:
-                c = random.choice(v1.itineraries[0])
-                v1_itinerary = [x for x in v1.itineraries[0] if x != c]
-                v2_itinerary = v2.itineraries[0] + [c]
-                v1.itineraries = [v1_itinerary]
-                v2.itineraries = [v2_itinerary]
+            if v1.flatten_itineraries():
+                c = random.choice(v1.flatten_itineraries())
+                v1_itinerary = [x for x in v1.flatten_itineraries() if x != c]
+                v2_itinerary = v2.flatten_itineraries() + [c]
+                v1.itineraries = self.build_itineraries(v1_itinerary)
+                v2.itineraries = self.build_itineraries(v2_itinerary)
 
         return solution
