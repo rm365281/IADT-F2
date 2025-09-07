@@ -48,6 +48,7 @@ STOP_GENERATION = False
 NUMBER_VEHICLES = 3
 POPULATION_SIZE = 100
 MUTATION_PROBABILITY = 0.5
+VEHICLE_AUTONOMY = 1000
 
 cities_locations = default_problems[15]
 nodes: list[Node] = [Node(identifier=i, x=city[0], y=city[1], priority=random.randint(0, 1)) for i, city in enumerate(cities_locations)]
@@ -62,7 +63,7 @@ for from_node in nodes:
 
 generation_counter = itertools.count(start=1)
 
-vrp = VRP(g, POPULATION_SIZE, NUMBER_VEHICLES, MUTATION_PROBABILITY)
+vrp = VRP(g, POPULATION_SIZE, NUMBER_VEHICLES, MUTATION_PROBABILITY, VEHICLE_AUTONOMY)
 
 population: list[Solution] = vrp.generate_initial_population()
 
