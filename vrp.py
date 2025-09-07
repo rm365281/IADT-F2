@@ -75,6 +75,7 @@ class VRP:
             vehicle.distance = 0.0
             has_non_priority_customer_earlier_in_itinerary = False
             for full_itinerary in vehicle.full_itineraries:
+                itinerary_distance = 0.0
                 for i in range(len(full_itinerary) - 1):
                     from_node: Node = self.graph.get_node(full_itinerary[i])
                     to_node: Node = self.graph.get_node(full_itinerary[i + 1])
@@ -87,9 +88,10 @@ class VRP:
                     if from_node == to_node:
                         penalty += 1000000
                         continue
-                    vehicle.distance += self.graph.get_edge(from_node, to_node).distance
-                if vehicle.distance > self.vehicle_autonomy:
+                    itinerary_distance += self.graph.get_edge(from_node, to_node).distance
+                if itinerary_distance > self.vehicle_autonomy:
                     penalty += 1000000
+                vehicle.distance += itinerary_distance
             total_distance += vehicle.distance
 
         distance_median = total_distance / len(solution.vehicles)
