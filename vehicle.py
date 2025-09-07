@@ -13,4 +13,4 @@ class Vehicle:
         return [node for itinerary in self.itineraries for node in itinerary]
 
     def __str__(self):
-        return f"Vehicle(depot_id={self.depot_id}, itineraries={self.full_itineraries}, capacity={self.capacity}, distance={self.distance}, autonomy={self.autonomy})"
+        return f"Vehicle(depot_id={self.depot_id}, itineraries={self.full_itineraries}, capacity={self.capacity}, total distance={self.distance}, autonomy={self.autonomy})"
