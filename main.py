@@ -2,7 +2,7 @@
 #
 # 1 - Prioridade diferente para entregas (medicamentos criticos vs entrega regulares) | 1 ou 0 - ok
 # 2 - Capacidade do veiculo
-# 3 - Autonomia (distancia máxima percorrida)
+# 3 - Autonomia (distancia máxima percorrida) - ok
 # 4 - Multiplos veiculos - ok
 
 # Restrições extras implementadas
@@ -91,7 +91,7 @@ while generate:
 
     while len(new_population) < POPULATION_SIZE:
         child = vrp.crossover(population)
-        child = vrp.mutate(child)
+        #child = vrp.mutate(child)
         new_population.append(child)
 
     population = new_population
