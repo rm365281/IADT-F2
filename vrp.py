@@ -37,34 +37,32 @@ class VRP:
             vehicles.append(Vehicle(depot_id=self.depot.identifier, itineraries=itineraries, autonomy=self.vehicle_autonomy))
         return vehicles
 
-    def build_itineraries(self, customer_ids) -> list[list[int]]:
-        node_ids: list[int] = []
-        from_node = self.depot  # inicia o from_node com o depot
-        distance = 0.0
+    def build_itineraries(self, customer_ids: list[int]) -> list[list[int]]:
         itineraries: list[list[int]] = []
-        for i in range(len(customer_ids)):
-            to_node = self.graph.get_node(customer_ids[i])
+        node_ids: list[int] = []
+        from_node = self.depot
+        distance = 0.0
 
-            if to_node == self.depot:
-                raise ValueError("Crossover resulted in a route containing the depot as a customer.")
-
+        for node_id in customer_ids:
+            to_node = self.graph.get_node(node_id)
             step_distance = self.graph.get_edge(from_node, to_node).distance
+            depot_step_distance = self.graph.get_edge(to_node, self.depot).distance
 
-            from_node = self.graph.get_node(customer_ids[
-                                                i])  # atualiza o from_node com o valor do to_node pois será a origem na proxima iteração dentro do loop
+            # tenta respeitar a autonomia, mas não é obrigatório
+            if node_ids and distance + step_distance + depot_step_distance > self.vehicle_autonomy:
+                # fecha o itinerário atual e inicia um novo
+                itineraries.append(node_ids)
+                node_ids = []
+                distance = 0.0
+                from_node = self.depot
 
-            depot_step_distance = 0.0
-            if from_node != self.depot:
-                depot_step_distance = self.graph.get_edge(from_node, self.depot).distance
-
-            if distance + step_distance + depot_step_distance > self.vehicle_autonomy:  # se a distancia acumulada for maior que a autonomia do veiculo
-                itineraries.append(node_ids)  # adiciona o itinerario atual na lista de itinerarios
-                from_node = self.depot  # reseta o from_node para o depot
-                distance = 0.0  # reseta a distancia acumulada
-                node_ids = []  # reseta a lista de node_ids para iniciar um novo itinerario
+            node_ids.append(node_id)
             distance += step_distance
-            node_ids.append(customer_ids[i])
-        itineraries.append(node_ids)
+            from_node = to_node
+
+        if node_ids:
+            itineraries.append(node_ids)
+
         return itineraries
 
     def fitness(self, solution: Solution) -> None:
