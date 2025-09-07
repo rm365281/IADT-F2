@@ -81,12 +81,12 @@ while generate:
 
     population = vrp.sort_population(population=population)
 
-    best_solution = population[0]
-
     generation_time = time.time() - generation_start
     total_time = time.time() - start_time
-    
-    print(f"Generation {generation}: Best distance = {round(best_solution.total_distance(), 2)} - Best fitness: {round(best_solution.fitness, 2)} | Time: {generation_time:.2f}s | Total: {total_time:.2f}s | Solution: {best_solution}")
+
+    if best_solution is None or best_solution.fitness > population[0].fitness:
+        best_solution = population[0]
+        print(f"Generation {generation}: Best distance = {round(best_solution.total_distance(), 2)} - Best fitness: {round(best_solution.fitness, 2)} | Time: {generation_time:.2f}s | Total: {total_time:.2f}s | Solution: {best_solution}")
     
     new_population = [copy.deepcopy(population[0])]
 
