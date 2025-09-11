@@ -1,14 +1,11 @@
-from dataclasses import field
-from customer import Customer
-
-
 class Itinerary:
-    customers: list[Customer]
-    distance: float = field(default=0.0, compare=False)
+    customers: list[int]
 
-    def __init__(self, customers: list[Customer]) -> None:
+    def __init__(self, customers: list[int]) -> None:
         self.customers = customers
         self.distance = 0.0
 
-    def hasAtLeastOneCustomers(self) -> bool:
-        return len(self.customers) > 0
+    def __str__(self):
+        return f"Itinerary: {self.customers}, Distance: {self.distance}, Customers: {len(self.customers)-2}"
+
+    __repr__ = __str__

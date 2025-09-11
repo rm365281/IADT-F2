@@ -1,6 +1,3 @@
-from dataclasses import dataclass
-
-import numpy as np
 from vehicle import Vehicle
 
 class Solution:
@@ -18,10 +15,10 @@ class Solution:
         return "\n".join(lines)
     
     def total_distance(self) -> float:
-        return sum(vehicle.distance for vehicle in self.vehicles)
+        return sum(vehicle.distance() for vehicle in self.vehicles)
     
     def flatten_routes(self) -> list[int]:
         route: list[int] = []
         for vehicle in self.vehicles:
-            route += vehicle.flatten_itineraries()
+            route += vehicle.customers()[1:-1]
         return route

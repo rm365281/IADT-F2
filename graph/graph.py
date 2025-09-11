@@ -1,12 +1,20 @@
+import math
+
 from graph import Node
 from graph import Edge
 
 
 class Graph:
+    _nodes: list[Node] = list()
+    _edges: list[Edge] = list()
 
-    def __init__(self) -> None:
-        self._nodes: list[Node] = list()
-        self._edges: list[Edge] = list()
+    def __init__(self, nodes: list[Node]) -> None:
+        for from_node in nodes:
+            for to_node in nodes:
+                if from_node != to_node:
+                    distance: float = math.hypot(from_node.x - to_node.x, from_node.y - to_node.y)
+                    edge = Edge(from_node=from_node, to_node=to_node, distance=distance)
+                    self.add_edge(edge)
 
     def is_empty(self) -> bool:
         return len(self._nodes) == 0
