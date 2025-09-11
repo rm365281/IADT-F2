@@ -7,6 +7,7 @@ from graph.graph import Graph
 from itinerary import Itinerary
 from solution import Solution
 from vehicle import Vehicle
+from vrp.adjustment.adjustment import Adjustment
 from vrp.crossover import parents_choice, choose_two_different_indices
 from vrp.fitness import calculate_vehicle_unbalanced_distance_penality, calculate_priority_violation_penality
 from vrp.mutation import mutate_vehicle_itinerary, mutate_itinerary_between_vehicles
@@ -21,6 +22,7 @@ class VRP:
         self.depot = graph.get_node(0)
         self.vehicle_autonomy = vehicle_autonomy
         self.vehicle_capacity = vehicle_capacity
+        self.__adjustment = Adjustment(graph, self.depot.identifier)
 
     def generate_initial_population(self) -> list[Solution]:
         customers: list[Node] = self.graph.get_nodes()[1:]
@@ -30,7 +32,7 @@ class VRP:
             customer_ids: list[int] = [customer.identifier for customer in shuffled_customers]
             vehicles = self.build_vehicles(customer_ids)
             solution = Solution(vehicles=vehicles)
-            solution = self.adjustment(solution)
+            solution = self.__adjustment.apply(solution)
             solutions.append(solution)
         return solutions
 
@@ -82,7 +84,7 @@ class VRP:
                     current_load += demand
                 if customer_id == self.depot.identifier:
                     if current_load > vehicle.capacity:
-                        penalty += 1000 * (current_load - vehicle.capacity)
+                        penalty += int('inf') #1000 * (current_load - vehicle.capacity)
                     current_load = 0
 
         penalty += calculate_vehicle_unbalanced_distance_penality(solution.vehicles)
@@ -126,32 +128,4 @@ class VRP:
         return solution
 
     def adjustment(self, solution: Solution) -> Solution:
-        new_vehicles: list[Vehicle] = []
-        for vehicle in solution.vehicles:
-            customer_ids = vehicle.itinerary.customers
-            current_load = 0
-
-            new_route = []
-            for customer_id in customer_ids:
-                if customer_id == self.depot.identifier:
-                    new_route.append(customer_id)
-                    continue
-                demand = self.graph.get_node(customer_id).demand
-                if current_load + demand > vehicle.capacity:
-                    new_route.append(self.depot.identifier)
-                    current_load = 0
-                new_route.append(customer_id)
-                current_load += demand
-
-            previous_customer_id = None
-            final_itinerary = []
-            for customer_id in new_route:
-                if not (previous_customer_id == 0 and customer_id == 0):
-                    final_itinerary.append(customer_id)
-                previous_customer_id = customer_id
-
-            new_vehicle = Vehicle(itinerary=Itinerary(final_itinerary), autonomy=vehicle.autonomy, capacity=vehicle.capacity)
-            new_vehicles.append(new_vehicle)
-
-        solution.vehicles = new_vehicles
-        return solution
+        return self.__adjustment.apply(solution)

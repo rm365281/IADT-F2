@@ -41,7 +41,7 @@ NUMBER_VEHICLES = 2
 POPULATION_SIZE = 100
 MUTATION_PROBABILITY = 1
 VEHICLE_AUTONOMY = 600
-VEHICLE_CAPACITY = 10
+VEHICLE_CAPACITY = 30
 
 cities_locations = default_problems[15]
 nodes: list[Node] = [Node(identifier=i, x=city[0], y=city[1], priority=random.randint(0, 1), demand=random.randint(1,11)) for i, city in enumerate(cities_locations)]

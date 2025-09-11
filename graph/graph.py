@@ -52,6 +52,10 @@ class Graph:
     def get_nodes(self) -> list[Node]:
         return self._nodes
 
+    def get_node_demand(self, node_id: int) -> int:
+        node = self.get_node(node_id)
+        return node.demand
+
     def __contains__(self, node: Node) -> bool:
         return node in self._nodes
     
