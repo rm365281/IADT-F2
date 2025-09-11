@@ -8,7 +8,7 @@ from itinerary import Itinerary
 from solution import Solution
 from vehicle import Vehicle
 from vrp.adjustment.adjustment import Adjustment
-from vrp.crossover import parents_choice, choose_two_different_indices
+from vrp.crossover import choose_two_different_indices
 from vrp.fitness import calculate_vehicle_unbalanced_distance_penality, calculate_priority_violation_penality
 from vrp.mutation import mutate_vehicle_itinerary, mutate_itinerary_between_vehicles
 
@@ -94,9 +94,7 @@ class VRP:
     def sort_population(self, population: list[Solution]) -> list[Solution]:
         return sorted(population, key=lambda solution: solution.fitness)
 
-    def crossover(self, population: list[Solution]) -> Solution:
-        p1, p2 = parents_choice(population)
-
+    def crossover(self, p1: Solution, p2: Solution) -> Solution:
         p1_flat_routes: list[int] = [x for x in p1.flatten_routes() if x != self.depot.identifier]
         flatten_routes_length = len(p1_flat_routes)
 

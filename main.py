@@ -35,6 +35,7 @@ from graph import Graph
 from genetic_algorithm import default_problems
 from solution import Solution
 from vrp import VRP
+from vrp.selection import parents_selection
 
 STOP_GENERATION = False
 NUMBER_VEHICLES = 2
@@ -78,7 +79,8 @@ while generate:
     new_population = [copy.deepcopy(population[0])]
 
     while len(new_population) < POPULATION_SIZE:
-        child = vrp.crossover(population)
+        parent1, parent2 = parents_selection(population)
+        child = vrp.crossover(parent1, parent2)
         child = vrp.mutate(child)
         child = vrp.adjustment(child)
         new_population.append(child)
