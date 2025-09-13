@@ -4,66 +4,49 @@ from api.websocket import app
 
 client = TestClient(app)
 
+def receive_until(websocket, expected_event, timeout=5, max_events=50):
+    import time
+    start = time.time()
+    for _ in range(max_events):
+        if time.time() - start > timeout:
+            raise TimeoutError(f"Timeout esperando pelo evento '{expected_event}'")
+        data = websocket.receive_json()
+        if data["event"] == expected_event:
+            return data
+    raise TimeoutError(f"Evento '{expected_event}' não recebido após {max_events} eventos")
+
 def test_websocket_connection_accepts_and_closes():
     with client.websocket_connect("/ws/genetic") as websocket:
         websocket.send_json({"command": "start"})
-        data = websocket.receive_json()
+        data = receive_until(websocket, "started")
         assert data["event"] == "started"
         websocket.send_json({"command": "stop"})
-        # Consome eventos até encontrar 'stopped'
-        for _ in range(5):
-            data = websocket.receive_json()
-            if data["event"] == "stopped":
-                break
+        data = receive_until(websocket, "stopped")
         assert data["event"] == "stopped"
 
 def test_websocket_returns_status_and_best_solution():
     with client.websocket_connect("/ws/genetic") as websocket:
         websocket.send_json({"command": "start"})
-        # Consome eventos até encontrar 'started'
-        for _ in range(10):
-            data = websocket.receive_json()
-            if data["event"] == "started":
-                break
+        data = receive_until(websocket, "started")
         assert data["event"] == "started"
         websocket.send_json({"command": "status"})
-        # Consome eventos até encontrar 'status'
-        for _ in range(10):
-            data = websocket.receive_json()
-            if data["event"] == "status":
-                break
+        data = receive_until(websocket, "status")
         assert data["event"] == "status"
         websocket.send_json({"command": "get_best_solution"})
-        # Consome eventos até encontrar 'best_solution'
-        for _ in range(10):
-            data = websocket.receive_json()
-            if data["event"] == "best_solution":
-                break
+        data = receive_until(websocket, "best_solution")
         assert data["event"] == "best_solution"
         assert "solution" in data
 
 def test_websocket_handles_pause_and_resume():
     with client.websocket_connect("/ws/genetic") as websocket:
         websocket.send_json({"command": "start"})
-        # Consome eventos até encontrar 'started'
-        for _ in range(10):
-            data = websocket.receive_json()
-            if data["event"] == "started":
-                break
+        data = receive_until(websocket, "started")
         assert data["event"] == "started"
         websocket.send_json({"command": "pause"})
-        # Consome eventos até encontrar 'paused'
-        for _ in range(10):
-            data = websocket.receive_json()
-            if data["event"] == "paused":
-                break
+        data = receive_until(websocket, "paused")
         assert data["event"] == "paused"
         websocket.send_json({"command": "resume"})
-        # Consome eventos até encontrar 'resumed'
-        for _ in range(10):
-            data = websocket.receive_json()
-            if data["event"] == "resumed":
-                break
+        data = receive_until(websocket, "resumed")
         assert data["event"] == "resumed"
 
 def test_websocket_ignores_unknown_command():

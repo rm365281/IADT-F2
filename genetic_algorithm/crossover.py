@@ -2,8 +2,8 @@ import random
 
 from domain.route import Route
 from domain.solution import Solution
-from domain.vehicle import Vehicle
 from vrp.route_spliter import RouteSplitter
+from domain.vehicle import Vehicle
 
 
 def choose_two_different_indices(length: int) -> tuple[int, int]:
@@ -21,7 +21,7 @@ def build_child_route(main_parent_flat_routes: list[int], secondary_parent_flat_
     return Route(child)
 
 class Crossover:
-    def __init__(self, depot_identifier: int, number_vehicles: int, vehicle_autonomy: float, vehicle_capacity: int) -> None:
+    def __init__(self, depot_identifier: int, number_vehicles: int, vehicle_autonomy: float, vehicle_capacity: int, crossover_probability: float = 1.0) -> None:
         if number_vehicles <= 0:
             raise ValueError("Number of vehicles must be greater than zero.")
         self.__number_vehicles = number_vehicles
@@ -29,10 +29,11 @@ class Crossover:
         self.__vehicle_autonomy = vehicle_autonomy
         self.__vehicle_capacity = vehicle_capacity
         self.__route_splitter = RouteSplitter(depot_identifier, number_vehicles)
-
+        self.__crossover_probability = crossover_probability
 
     def apply(self, p1: Solution, p2: Solution) -> tuple[Solution, Solution]:
-        # Remove depot identifier
+        if random.random() > self.__crossover_probability:
+            return p1, p2
         p1_flat_routes: list[int] = [x for x in p1.flatten_routes() if x != self.__depot_identifier]
         p2_flat_routes: list[int] = [x for x in p2.flatten_routes() if x != self.__depot_identifier]
         length = len(p1_flat_routes)
@@ -46,7 +47,7 @@ class Crossover:
             child2 = build_child_route(p2_flat_routes, p1_flat_routes, end_index, start_index)
 
             # Check if children are different from parents
-            if (child1.customers != p1_flat_routes or child2.customers != p2_flat_routes):
+            if child1.customers != p1_flat_routes or child2.customers != p2_flat_routes:
                 break
         else:
             # If all attempts fail, force a swap of at least one gene
@@ -72,4 +73,3 @@ class Crossover:
         vehicles_solution_2 = [Vehicle(route, autonomy=self.__vehicle_autonomy, capacity=self.__vehicle_capacity) for route in self.__route_splitter.split(child2)]
 
         return Solution(vehicles=vehicles_solution_1), Solution(vehicles=vehicles_solution_2)
-

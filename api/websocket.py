@@ -31,6 +31,7 @@ async def websocket_endpoint(websocket: WebSocket):
                 mutation_probability = data.get("mutation_probability", 0.5)
                 vehicle_autonomy = data.get("vehicle_autonomy", 600)
                 vehicle_capacity = data.get("vehicle_capacity", 20)
+                crossover_probability = data.get("crossover_probability", 1.0)
 
                 g = Graph(nodes)
                 vrp_factory = VrpFactory(
@@ -39,7 +40,8 @@ async def websocket_endpoint(websocket: WebSocket):
                     number_vehicles,
                     mutation_probability,
                     vehicle_autonomy,
-                    vehicle_capacity
+                    vehicle_capacity,
+                    crossover_probability
                 )
                 runner = GeneticAlgorithmRunner(
                     vrp_factory,
