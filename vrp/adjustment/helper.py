@@ -9,17 +9,14 @@ class Helper:
 
     def split_route_by_capacity(self, route: Route, vehicle_capacity: int) -> Route:
         """
-        Split the route by vehicle capacity, inserting depots as needed.
+        Splits the route by vehicle capacity, inserting depots as needed.
         Args:
             route: The route to be split.
             vehicle_capacity: The capacity of the vehicle.
-
         Returns:
             The route split by vehicle capacity.
-
         Raises:
             ValueError: If any customer's demand is greater than the vehicle capacity.
-
         """
         new_route: list[int] = []
         current_load = 0
@@ -39,13 +36,11 @@ class Helper:
 
     def remove_duplicated_sequencial_depots(self, route: Route) -> Route:
         """
-        Remove duplicated sequential depots from the route.
+        Removes duplicated sequential depots from the route.
         Args:
             route: The route to be processed.
-
         Returns:
             The route without duplicated sequential depots.
-
         """
         final_route: list[int] = []
         previous_customer_id = None
@@ -57,13 +52,11 @@ class Helper:
 
     def calculate_distance(self, route: Route) -> float:
         """
-        Calculate the total distance of a given route.
+        Calculates the total distance of a given route.
         Args:
             route: The route for which to calculate the distance.
-
         Returns:
             The total distance of the route.
-
         """
         itinerary_distance = 0.0
         customers = route.customers

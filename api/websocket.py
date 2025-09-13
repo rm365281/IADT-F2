@@ -13,6 +13,17 @@ app = FastAPI()
 
 @app.websocket("/ws/genetic")
 async def websocket_endpoint(websocket: WebSocket):
+    """
+    WebSocket endpoint for managing the genetic algorithm for solving the Vehicle Routing Problem (VRP).
+    Args:
+        websocket: The WebSocket connection.
+
+    Returns:
+        None
+    Raises:
+        ValueError: If the provided parameters are invalid.
+
+    """
     await websocket.accept()
 
     async def send_event(event: dict):

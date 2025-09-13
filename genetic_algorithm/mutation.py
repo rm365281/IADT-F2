@@ -12,12 +12,12 @@ class Mutation:
 
     def apply(self, solution: Solution) -> Solution:
         """
-        Aplica a Inverted Displacement Mutation na solução.
+        Applies the Inverted Displacement Mutation to the solution.
         Args:
-            solution: solução a ser mutada.
+            solution: Solution to be mutated.
 
         Returns:
-            Solução mutada.
+            Mutated solution.
 
         """
         if random.random() > self.__mutation_probability:
@@ -26,27 +26,27 @@ class Mutation:
         vehicles = solution.vehicles
         if not vehicles:
             return solution
-        depot_identifier = vehicles[0].route.customers[0]  # Assume depósito é o primeiro nó
+        depot_identifier = vehicles[0].route.customers[0]  # Assumes depot is the first node
         autonomy = vehicles[0].autonomy
         capacity = vehicles[0].capacity
         number_vehicles = len(vehicles)
 
-        # Obtém a rota linear sem o depósito
+        # Obtains the linear route without the depot
         flat_route = [x for x in solution.flatten_routes() if x != depot_identifier]
         route_length = len(flat_route)
         if route_length < 2:
             return solution
 
-        # Seleciona dois índices distintos
+        # Selects two distinct indices
         idx1 = random.randint(0, route_length - 2)
         idx2 = random.randint(idx1 + 1, route_length - 1)
 
-        # Extrai, inverte e recoloca o segmento
+        # Extracts, inverts, and repositions the segment
         segment = flat_route[idx1:idx2 + 1]
         segment.reverse()
         mutated_route = flat_route[:idx1] + segment + flat_route[idx2 + 1:]
 
-        # Divide a rota mutada em rotas para cada veículo
+        # Divides the mutated route into routes for each vehicle
         split_routes = self.__splitter.split(Route(mutated_route))
         mutated_vehicles = [Vehicle(route, autonomy=autonomy, capacity=capacity) for route in split_routes]
 

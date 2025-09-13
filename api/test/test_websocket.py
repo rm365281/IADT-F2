@@ -55,12 +55,9 @@ def test_websocket_ignores_unknown_command():
         data = websocket.receive_json()
         assert data["event"] == "started"
         websocket.send_json({"command": "unknown_command"})
-        # Should not raise, may not respond
-        # Optionally, check for no response or error handling
 
 def test_websocket_start_with_invalid_capacity():
     with client.websocket_connect("/ws/genetic") as websocket:
-        # Define uma capacidade menor que qualquer demanda possível (demanda mínima é 1)
         websocket.send_json({"command": "start", "vehicle_capacity": 0})
         data = websocket.receive_json()
         assert data["event"] == "error"
