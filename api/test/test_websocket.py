@@ -1,5 +1,5 @@
-import pytest
 from fastapi.testclient import TestClient
+
 from api.websocket import app
 
 client = TestClient(app)
