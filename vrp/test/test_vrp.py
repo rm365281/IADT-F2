@@ -1,11 +1,12 @@
 from unittest import TestCase
 from unittest.mock import Mock
 
-from vrp import VRP, Mutation
+from vrp import VRP
+from genetic_algorithm import Mutation
 from vrp.adjustment.adjustment import Adjustment
-from vrp.crossover import Crossover
-from vrp.fitness import Fitness
-from vrp.initial_population import InitialPopulationGenerator
+from genetic_algorithm.crossover import Crossover
+from genetic_algorithm.fitness import Fitness
+from genetic_algorithm.initial_population import InitialPopulationGenerator
 from vrp.route_spliter import RouteSplitter
 
 

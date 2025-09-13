@@ -1,7 +1,7 @@
 from unittest import TestCase
 from unittest.mock import MagicMock
 
-from route import Route
+from domain.route import Route
 from vrp.adjustment.helper import Helper
 
 
@@ -51,7 +51,7 @@ class TestHelper(TestCase):
 
     def test_calculates_distance_correctly(self):
         route = Route([0, 1, 2])
-        self.graph.get_edge.side_effect = [
+        self.graph.get_edge_by_node_ids.side_effect = [
             MagicMock(distance=10.0),
             MagicMock(distance=20.0)
         ]

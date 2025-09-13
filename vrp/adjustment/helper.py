@@ -1,4 +1,4 @@
-from route import Route
+from domain.route import Route
 
 
 class Helper:

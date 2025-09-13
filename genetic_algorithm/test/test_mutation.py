@@ -1,8 +1,8 @@
 from unittest import TestCase
 from unittest.mock import Mock
 
-from route import Route
-from vrp.mutation import Mutation
+from domain.route import Route
+from genetic_algorithm.mutation import Mutation
 
 
 class TestMutation(TestCase):

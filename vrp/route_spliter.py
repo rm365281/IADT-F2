@@ -1,6 +1,6 @@
 import numpy as np
 
-from route import Route
+from domain import Route
 
 
 class RouteSplitter:

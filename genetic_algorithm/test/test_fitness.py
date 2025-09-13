@@ -1,8 +1,8 @@
 from unittest import TestCase
 from unittest.mock import Mock
 
-from graph import Node
-from vrp.fitness import Fitness
+from domain.graph import Node
+from genetic_algorithm.fitness import Fitness
 
 
 class TestFitness(TestCase):

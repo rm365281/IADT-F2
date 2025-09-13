@@ -1,10 +1,11 @@
-from graph import Graph
-from vrp import VRP, Mutation
+from domain.graph import Graph
+from vrp import VRP
+from genetic_algorithm.mutation import Mutation
 from vrp.adjustment.adjustment import Adjustment
 from vrp.adjustment.helper import Helper
-from vrp.crossover import Crossover
-from vrp.fitness import Fitness
-from vrp.initial_population import InitialPopulationGenerator
+from genetic_algorithm.crossover import Crossover
+from genetic_algorithm.fitness import Fitness
+from genetic_algorithm.initial_population import InitialPopulationGenerator
 from vrp.route_spliter import RouteSplitter
 
 

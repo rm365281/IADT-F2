@@ -1,6 +1,6 @@
 import random
 
-from solution import Solution
+from domain import Solution
 
 
 def parents_selection(population: list[Solution]) -> tuple[Solution, Solution]:

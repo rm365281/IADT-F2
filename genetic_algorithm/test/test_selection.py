@@ -3,7 +3,7 @@ from unittest.mock import Mock
 
 import pytest
 
-from vrp.selection import parents_selection
+from genetic_algorithm.selection import parents_selection
 
 
 @pytest.mark.parametrize("population_size", [3, 5, 10])

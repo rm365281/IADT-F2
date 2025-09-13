@@ -1,8 +1,8 @@
 import random
 from vrp.route_spliter import RouteSplitter
-from solution import Solution
-from vehicle import Vehicle
-from route import Route
+from domain import Solution
+from domain import Vehicle
+from domain import Route
 
 
 class Mutation:

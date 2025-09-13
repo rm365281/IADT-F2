@@ -5,8 +5,7 @@ import math
 import copy 
 from typing import List, Tuple
 
-from solution import Solution
-from vehicle import Vehicle
+from domain.solution import Solution
 
 default_problems = {
 5: [(733, 251), (706, 87), (546, 97), (562, 49), (576, 253)],

@@ -1,5 +1,5 @@
-from solution import Solution
-from vehicle import Vehicle
+from domain.solution import Solution
+from domain.vehicle import Vehicle
 from vrp.adjustment.helper import Helper
 
 

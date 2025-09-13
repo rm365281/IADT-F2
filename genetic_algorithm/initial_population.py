@@ -2,10 +2,10 @@ import random
 
 import numpy as np
 
-from graph import Graph, Node
-from route import Route
-from solution import Solution
-from vehicle import Vehicle
+from domain.graph import Graph, Node
+from domain.route import Route
+from domain.solution import Solution
+from domain.vehicle import Vehicle
 from vrp.adjustment.adjustment import Adjustment
 
 

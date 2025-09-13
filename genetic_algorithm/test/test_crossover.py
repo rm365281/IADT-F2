@@ -1,10 +1,10 @@
 from unittest import TestCase
-from vrp.crossover import Crossover
-from solution import Solution
-from vehicle import Vehicle
-from route import Route
+from genetic_algorithm import Crossover
+from domain.solution import Solution
+from domain.vehicle import Vehicle
+from domain.route import Route
 
-from vrp.crossover import choose_two_different_indices
+from genetic_algorithm.crossover import choose_two_different_indices
 
 
 def test_choose_two_different_indices():

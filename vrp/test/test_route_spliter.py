@@ -1,6 +1,6 @@
 from unittest import TestCase
 from vrp.route_spliter import RouteSplitter
-from route import Route
+from domain.route import Route
 
 
 class TestRouteSpliter(TestCase):

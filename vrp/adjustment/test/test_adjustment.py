@@ -1,8 +1,8 @@
 from unittest import TestCase
 from unittest.mock import Mock
 
-from route import Route
-from solution import Solution
+from domain import Route
+from domain import Solution
 from vrp.adjustment.adjustment import Adjustment
 
 

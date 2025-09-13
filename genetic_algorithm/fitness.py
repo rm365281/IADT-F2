@@ -1,5 +1,5 @@
-from graph import Node, Graph
-from vehicle import Vehicle
+from domain.graph import Node, Graph
+from domain.vehicle import Vehicle
 
 
 class Fitness:

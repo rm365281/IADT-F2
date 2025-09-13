@@ -1,8 +1,8 @@
 import random
 
-from route import Route
-from solution import Solution
-from vehicle import Vehicle
+from domain.route import Route
+from domain.solution import Solution
+from domain.vehicle import Vehicle
 from vrp.route_spliter import RouteSplitter
 
 

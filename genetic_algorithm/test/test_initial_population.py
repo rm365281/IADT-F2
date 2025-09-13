@@ -1,7 +1,7 @@
 from unittest import TestCase
-from vrp import VRP
-from graph import Node, Graph
+from domain.graph import Node, Graph
 from genetic_algorithm import default_problems
+from genetic_algorithm.initial_population import InitialPopulationGenerator
 
 
 class TestInitialPopulationGenerator(TestCase):
@@ -16,10 +16,10 @@ class TestInitialPopulationGenerator(TestCase):
                          enumerate(cities_locations)]
     g = Graph(nodes)
 
-    vrp = VRP(g, POPULATION_SIZE, NUMBER_VEHICLES, MUTATION_PROBABILITY, VEHICLE_AUTONOMY, VEHICLE_CAPACITY)
+    initialPopulationGenerator = InitialPopulationGenerator(g, POPULATION_SIZE, NUMBER_VEHICLES, MUTATION_PROBABILITY, VEHICLE_AUTONOMY, VEHICLE_CAPACITY)
 
     def test_generate_initial_population(self):
-        population = self.vrp.generate_initial_population()
+        population = self.initialPopulationGenerator.generate()
 
         self.assertEqual(len(population), self.POPULATION_SIZE)
         for individual in population:
