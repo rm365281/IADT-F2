@@ -14,7 +14,7 @@ class VrpFactory:
     def __init__(self, graph: Graph, population_size: int, number_vehicles: int, mutation_probability: float = 0.5,
                  vehicle_autonomy: float = 500.0, vehicle_capacity: int = 100) -> None:
         self.__depot = graph.get_node(0)
-        self.__adjustment = Adjustment(self.__depot.identifier, Helper(graph, self.__depot.identifier))
+        self.__adjustment = Adjustment(Helper(graph, self.__depot.identifier))
         self.__route_splitter = RouteSplitter(self.__depot.identifier, number_vehicles)
         self.__crossover = Crossover(self.__depot.identifier, number_vehicles, vehicle_autonomy,
                                      vehicle_capacity)

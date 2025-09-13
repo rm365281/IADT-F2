@@ -30,27 +30,40 @@ class Crossover:
         self.__vehicle_capacity = vehicle_capacity
         self.__route_splitter = RouteSplitter(depot_identifier, number_vehicles)
 
-    def apply(self, p1: Solution, p2: Solution) -> tuple[Solution, Solution]:
-        # Remover o identificador do depósito corretamente
-        p1_flat_routes: list[int] = [x for x in p1.flatten_routes() if x != self.__depot_identifier]
-        p1_flatten_routes_length = len(p1_flat_routes)
-        p2_flat_routes = [x for x in p2.flatten_routes() if x != self.__depot_identifier]
-        p2_flatten_routes_length = len(p2_flat_routes)
 
-        if p1_flatten_routes_length != p2_flatten_routes_length:
+    def apply(self, p1: Solution, p2: Solution) -> tuple[Solution, Solution]:
+        # Remove depot identifier
+        p1_flat_routes: list[int] = [x for x in p1.flatten_routes() if x != self.__depot_identifier]
+        p2_flat_routes: list[int] = [x for x in p2.flatten_routes() if x != self.__depot_identifier]
+        length = len(p1_flat_routes)
+        if length != len(p2_flat_routes):
             raise ValueError("Parents must have the same number of customers for crossover.")
 
-        start_index, end_index = choose_two_different_indices(p1_flatten_routes_length)
+        max_attempts = 10
+        for attempt in range(max_attempts):
+            start_index, end_index = choose_two_different_indices(length)
+            child1 = build_child_route(p1_flat_routes, p2_flat_routes, end_index, start_index)
+            child2 = build_child_route(p2_flat_routes, p1_flat_routes, end_index, start_index)
 
-        # Child 1: segmento de p1, completa com genes de p2
-        child1 = build_child_route(p1_flat_routes, p2_flat_routes, end_index, start_index)
+            # Check if children are different from parents
+            if (child1.customers != p1_flat_routes or child2.customers != p2_flat_routes):
+                break
+        else:
+            # If all attempts fail, force a swap of at least one gene
+            if length > 1:
+                child1_genes = p1_flat_routes.copy()
+                child1_genes[0], child1_genes[1] = child1_genes[1], child1_genes[0]
+                child1 = Route(child1_genes)
+                child2_genes = p2_flat_routes.copy()
+                child2_genes[0], child2_genes[1] = child2_genes[1], child2_genes[0]
+                child2 = Route(child2_genes)
+            else:
+                child1 = Route(p1_flat_routes)
+                child2 = Route(p2_flat_routes)
 
-        # Child 2: segmento de p2, completa com genes de p1
-        child2 = build_child_route(p2_flat_routes, p1_flat_routes, end_index, start_index)
-
-        if len(child1.customers) != p1_flatten_routes_length:
+        if len(child1.customers) != length:
             raise ValueError("Children route must have parent length.")
-        if len(child2.customers) != p2_flatten_routes_length:
+        if len(child2.customers) != length:
             raise ValueError("Children route must have parent length.")
         if len(child1.customers) != len(child2.customers):
             raise ValueError("Children routes must have the same length.")

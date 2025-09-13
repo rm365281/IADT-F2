@@ -5,10 +5,11 @@ from domain.graph import Edge
 
 
 class Graph:
-    _nodes: list[Node] = list()
-    _edges: list[Edge] = list()
-
     def __init__(self, nodes: list[Node]) -> None:
+        self._nodes: list[Node] = []
+        self._edges: list[Edge] = []
+        for node in nodes:
+            self.add_node(node)
         for from_node in nodes:
             for to_node in nodes:
                 if from_node != to_node:
@@ -16,9 +17,6 @@ class Graph:
                     edge = Edge(from_node=from_node, to_node=to_node, distance=distance)
                     self.add_edge(edge)
 
-    def is_empty(self) -> bool:
-        return len(self._nodes) == 0
-    
     def add_node(self, node: Node) -> None:
         if node in self._nodes:
             raise ValueError(f"Vertex {node} already exists.")
@@ -51,9 +49,6 @@ class Graph:
         to_node = self.get_node(to_node_id)
         return self.get_edge(from_node, to_node)
     
-    def get_edges(self) -> list[Edge]:
-        return self._edges
-
     def get_nodes(self) -> list[Node]:
         return self._nodes
 

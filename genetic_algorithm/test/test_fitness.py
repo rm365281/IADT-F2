@@ -57,3 +57,61 @@ class TestFitness(TestCase):
         penalty = self.fitness.calculate_vehicle_unbalanced_distance_penality(vehicles)
         expected_penalty = 300 - 100 + 500 - 300
         assert penalty == expected_penalty
+
+    def test_calculate_capacity_violation_penality(self):
+        vehicle1 = Mock()
+        vehicle1.customers = Mock(return_value=[0, 1, 2, 0])
+        vehicle1.capacity = 100
+
+        vehicle2 = Mock()
+        vehicle2.customers = Mock(return_value=[0, 1, 2, 0])
+        vehicle2.capacity = 100
+
+        vehicles = [vehicle1, vehicle2]
+
+        graph = Mock()
+        graph.get_node.side_effect = [
+            Node(identifier=0, x=0, y=0, priority=0, demand=100),
+            Node(identifier=1, x=1, y=1, priority=0, demand=100),
+            Node(identifier=2, x=2, y=2, priority=1, demand=100),
+            Node(identifier=0, x=0, y=0, priority=0, demand=100),
+            Node(identifier=0, x=0, y=0, priority=0, demand=100),
+            Node(identifier=1, x=1, y=1, priority=0, demand=100),
+            Node(identifier=2, x=2, y=2, priority=1, demand=100),
+            Node(identifier=0, x=0, y=0, priority=0, demand=100),
+        ]
+        fitness = Fitness(graph)
+
+        penalty = fitness.calculate_capacity_violation_penality(vehicles)
+
+        expected_penalty = float('inf')
+
+        assert penalty == expected_penalty
+
+    def test_calculate_capacity_violation_penality_no_violation(self):
+        vehicle1 = Mock()
+        vehicle1.customers = Mock(return_value=[0, 1, 0])
+        vehicle1.capacity = 300
+
+        vehicle2 = Mock()
+        vehicle2.customers = Mock(return_value=[0, 2, 0])
+        vehicle2.capacity = 300
+
+        vehicles = [vehicle1, vehicle2]
+
+        graph = Mock()
+        graph.get_node.side_effect = [
+            Node(identifier=0, x=0, y=0, priority=0, demand=100),
+            Node(identifier=1, x=1, y=1, priority=0, demand=100),
+            Node(identifier=0, x=0, y=0, priority=0, demand=100),
+            Node(identifier=0, x=0, y=0, priority=0, demand=100),
+            Node(identifier=2, x=2, y=2, priority=1, demand=100),
+            Node(identifier=0, x=0, y=0, priority=0, demand=100),
+        ]
+        fitness = Fitness(graph)
+
+        penalty = fitness.calculate_capacity_violation_penality(vehicles)
+
+        expected_penalty = 0
+
+        assert penalty == expected_penalty

@@ -2,6 +2,8 @@ from unittest import TestCase
 from domain.graph import Node, Graph
 from genetic_algorithm import default_problems
 from genetic_algorithm.initial_population import InitialPopulationGenerator
+from vrp.adjustment.helper import Helper
+from vrp.adjustment.adjustment import Adjustment
 
 
 class TestInitialPopulationGenerator(TestCase):
@@ -16,7 +18,10 @@ class TestInitialPopulationGenerator(TestCase):
                          enumerate(cities_locations)]
     g = Graph(nodes)
 
-    initialPopulationGenerator = InitialPopulationGenerator(g, POPULATION_SIZE, NUMBER_VEHICLES, MUTATION_PROBABILITY, VEHICLE_AUTONOMY, VEHICLE_CAPACITY)
+    depot_identifier = 0
+    helper = Helper(g, depot_identifier)
+    adjustment = Adjustment(helper)
+    initialPopulationGenerator = InitialPopulationGenerator(g, POPULATION_SIZE, adjustment, VEHICLE_CAPACITY, VEHICLE_AUTONOMY, NUMBER_VEHICLES, depot_identifier)
 
     def test_generate_initial_population(self):
         population = self.initialPopulationGenerator.generate()

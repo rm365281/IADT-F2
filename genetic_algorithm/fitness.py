@@ -7,7 +7,7 @@ class Fitness:
         self.__graph = graph
 
     @staticmethod
-    def total_distance(vehicles: list[Vehicle]) -> float:
+    def _total_distance(vehicles: list[Vehicle]) -> float:
         """
         Calculate the total distance of all vehicles in the solution.
         Args:
@@ -90,7 +90,7 @@ class Fitness:
 
         """
         penalty = 0
-        total_distance = self.total_distance(vehicles)
+        total_distance = self._total_distance(vehicles)
         average_distance = total_distance / len(vehicles) if vehicles else 0
 
         for vehicle in vehicles:

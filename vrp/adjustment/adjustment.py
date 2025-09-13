@@ -4,8 +4,7 @@ from vrp.adjustment.helper import Helper
 
 
 class Adjustment:
-    def __init__(self, depot_identifier, helper: Helper):
-        self.__depot_identifier = depot_identifier
+    def __init__(self, helper: Helper):
         self.__helper = helper
 
     def apply(self, solution: Solution):

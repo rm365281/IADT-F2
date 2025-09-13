@@ -13,9 +13,6 @@ class Vehicle:
     def distance(self) -> float:
         return self.route.distance
 
-    def update_distance(self, distance: float) -> None:
-        self.route.distance = distance
-
     def __str__(self):
         lines = [
             f"Vehicle(capacity={self.capacity}, total distance={self.distance()}, autonomy={self.autonomy}",
