@@ -17,6 +17,9 @@ class Helper:
         Returns:
             The route split by vehicle capacity.
 
+        Raises:
+            ValueError: If any customer's demand is greater than the vehicle capacity.
+
         """
         new_route: list[int] = []
         current_load = 0
@@ -25,6 +28,8 @@ class Helper:
                 new_route.append(customer_identifier)
                 continue
             demand = self.__graph.get_node_demand(customer_identifier)
+            if demand > vehicle_capacity:
+                raise ValueError(f"Customer {customer_identifier} demand ({demand}) exceeds vehicle capacity ({vehicle_capacity})")
             if current_load + demand > vehicle_capacity:
                 new_route.append(self.__depot_identifier)
                 current_load = 0

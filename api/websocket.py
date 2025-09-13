@@ -34,22 +34,25 @@ async def websocket_endpoint(websocket: WebSocket):
                 crossover_probability = data.get("crossover_probability", 1.0)
 
                 g = Graph(nodes)
-                vrp_factory = VrpFactory(
-                    g,
-                    population_size,
-                    number_vehicles,
-                    mutation_probability,
-                    vehicle_autonomy,
-                    vehicle_capacity,
-                    crossover_probability
-                )
-                runner = GeneticAlgorithmRunner(
-                    vrp_factory,
-                    population_size,
-                    on_new_best_solution=send_event
-                )
-                await runner.start()
-                await websocket.send_json({"event": "started"})
+                try:
+                    vrp_factory = VrpFactory(
+                        g,
+                        population_size,
+                        number_vehicles,
+                        mutation_probability,
+                        vehicle_autonomy,
+                        vehicle_capacity,
+                        crossover_probability
+                    )
+                    runner = GeneticAlgorithmRunner(
+                        vrp_factory,
+                        population_size,
+                        on_new_best_solution=send_event
+                    )
+                    await runner.start()
+                    await websocket.send_json({"event": "started"})
+                except ValueError as e:
+                    await websocket.send_json({"event": "error", "message": str(e)})
             elif command == "pause" and runner:
                 await runner.pause()
                 await websocket.send_json({"event": "paused"})
