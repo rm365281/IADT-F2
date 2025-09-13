@@ -1,41 +1,59 @@
+from unittest import TestCase
 from unittest.mock import Mock
 
-import pytest
-
 from graph import Node
-from itinerary import Itinerary
-from vehicle import Vehicle
-from vrp.fitness import calculate_distance_penality, calculate_priority_violation_penality, \
-    calculate_vehicle_unbalanced_distance_penality
+from vrp.fitness import Fitness
 
 
-def test_calculate_distance_penality():
-    full_itinerary: Itinerary = Mock()
-    full_itinerary.distance = 100
+class TestFitness(TestCase):
 
-    vehicle: Vehicle = Mock()
-    vehicle.autonomy = 80
+    fitness = Fitness()
 
-    penalty = calculate_distance_penality(full_itinerary, vehicle)
+    def test_calculates_priority_violation_penalty(self):
+        vehicle = Mock()
+        vehicle.customers.return_value = [0, 1, 2]
+        vehicles = [vehicle]
 
-    assert penalty == (100 - 80) * 1000
+        graph = Mock()
+        graph.get_node.side_effect = [
+            Node(identifier=0, x=0, y=0, priority=0),
+            Node(identifier=0, x=0, y=0, priority=0),
+            Node(identifier=1, x=1, y=1, priority=0),
+            Node(identifier=0, x=0, y=0, priority=0),
+            Node(identifier=2, x=2, y=2, priority=1),
+            Node(identifier=0, x=0, y=0, priority=0),
+        ]
+        fitness = Fitness(graph)
 
-@pytest.mark.parametrize('depot, from_node, has_non_priority_customer_before_priority_customer_in_itinerary, expected_has_non_priority_customer_before_priority_customer_in_itinerary, expected_penalty', [
-    (Node(identifier=0, x=1, y=1, priority=0), Node(identifier=1, x=2, y=2, priority=0), False, True, 0),
-    (Node(identifier=0, x=1, y=1, priority=0), Node(identifier=2, x=3, y=3, priority=1), True, True, 50),
-])
-def test_calculate_priority_violation_penality(depot, from_node, has_non_priority_customer_before_priority_customer_in_itinerary, expected_has_non_priority_customer_before_priority_customer_in_itinerary, expected_penalty):
-    has_non_priority_customer_before_priority_customer_in_itinerary, penalty = calculate_priority_violation_penality(depot, from_node, has_non_priority_customer_before_priority_customer_in_itinerary)
+        result = fitness.calculate_priority_violation_penality(vehicles)
+        assert result == 50
 
-    assert expected_has_non_priority_customer_before_priority_customer_in_itinerary == has_non_priority_customer_before_priority_customer_in_itinerary
-    assert expected_penalty == penalty
+    def test_calculate_tolls_penality(self):
+        graph = Mock()
+        graph.get_edge_toll_by_node_id = Mock(side_effect=lambda from_id, to_id: {
+            (0, 1): 2,
+            (1, 2): 3,
+            (2, 0): 4
+        }.get((from_id, to_id), 0))
 
-@pytest.mark.parametrize('vehicles, expected_penalty', [
-    ([], 0),
-    ([Mock(distance=Mock(return_value=100))], 0),
-    ([Mock(distance=Mock(return_value=100)), Mock(distance=Mock(return_value=200))], 100),
-    ([Mock(distance=Mock(return_value=100)), Mock(distance=Mock(return_value=200)), Mock(distance=Mock(return_value=300))], 200),
-])
-def test_calculate_vehicle_unbalanced_distance_penality(vehicles, expected_penalty):
-    penalty = calculate_vehicle_unbalanced_distance_penality(vehicles)
-    assert expected_penalty == penalty
+        fitness = Fitness(graph)
+
+        vehicle1 = Mock()
+        vehicle1.customers = Mock(return_value=[0, 1, 2, 0])
+
+        vehicle2 = Mock()
+        vehicle2.customers = Mock(return_value=[0, 2, 0])
+
+        vehicles = [vehicle1, vehicle2]
+
+        total_tolls_penalty = fitness.calculate_tolls_penality(vehicles)
+
+        expected_penalty = (2 + 3 + 4 + 4) * 5
+
+        assert total_tolls_penalty == expected_penalty
+
+    def test_vehicle_unbalanced_distance_penality(self):
+        vehicles = [Mock(distance=Mock(return_value=100)), Mock(distance=Mock(return_value=300)), Mock(distance=Mock(return_value=500))]
+        penalty = self.fitness.calculate_vehicle_unbalanced_distance_penality(vehicles)
+        expected_penalty = 300 - 100 + 500 - 300
+        assert penalty == expected_penalty

@@ -7,7 +7,7 @@ from vrp.selection import parents_selection
 
 
 @pytest.mark.parametrize("population_size", [3, 5, 10])
-def test_parents_choice(population_size):
+def test_parents_selection(population_size):
     population = []
     for _ in range(population_size):
         solution = Mock()
@@ -16,6 +16,7 @@ def test_parents_choice(population_size):
 
     parent1, parent2 = parents_selection(population)
     assert parent1 != parent2
+
 
 def test_parents_choice_with_one_individual():
     population = [Mock(fitness=10.0)]

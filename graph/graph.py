@@ -1,5 +1,7 @@
 import math
 
+from numpy import integer
+
 from graph import Node
 from graph import Edge
 
@@ -45,6 +47,11 @@ class Graph:
             if edge.from_node == from_node and edge.to_node == to_node:
                 return edge
         raise ValueError(f"Edge from {from_node} to {to_node} does not exist.")
+
+    def get_edge_by_node_ids(self, from_node_id: int, to_node_id: int) -> Edge:
+        from_node = self.get_node(from_node_id)
+        to_node = self.get_node(to_node_id)
+        return self.get_edge(from_node, to_node)
     
     def get_edges(self) -> list[Edge]:
         return self._edges
@@ -61,3 +68,6 @@ class Graph:
     
     def __str__(self):
         return f"Graph with {len(self._nodes)} nodes and {len(self._edges)} edges."
+
+    def get_edge_toll_by_node_id(self, from_node_id: int, to_node_id: int) -> int:
+        return self.get_edge_by_node_ids(from_node_id, to_node_id).toll_quantity

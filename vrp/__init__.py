@@ -1,2 +1,2 @@
-from .mutation import mutate_vehicle_itinerary, mutate_itinerary_between_vehicles
+from .mutation import Mutation
 from .vrp import VRP

@@ -20,5 +20,5 @@ class Solution:
     def flatten_routes(self) -> list[int]:
         route: list[int] = []
         for vehicle in self.vehicles:
-            route += vehicle.customers()[1:-1]
+            route += vehicle.customers()
         return route

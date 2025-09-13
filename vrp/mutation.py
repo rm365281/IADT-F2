@@ -1,33 +1,53 @@
 import random
-
-import solution
-from graph import Node
-from itinerary import Itinerary
+from vrp.route_spliter import RouteSplitter
 from solution import Solution
 from vehicle import Vehicle
-from itertools import groupby
+from route import Route
 
-def mutate_vehicle_itinerary(vehicle: Vehicle, mutation_probability: float) -> None:
-    itinerary = vehicle.itinerary
-    customer_ids = itinerary.customers[1:-1]
-    for j in range(len(customer_ids) - 1):
-        if random.random() <= mutation_probability:
-            customer_ids[j], customer_ids[j + 1] = customer_ids[j + 1], customer_ids[j]
-    vehicle.itinerary = Itinerary([key for key, _ in groupby([0] + customer_ids + [0])])
 
-def mutate_itinerary_between_vehicles(solution: Solution) -> None:
-    if len(solution.vehicles) < 2:
-        return
-    v1, v2 = random.sample(solution.vehicles, 2)
-    _swap_customers_between_vehicles(solution, v1, v2)
+class Mutation:
+    def __init__(self, mutation_probability: float, splitter: RouteSplitter) -> None:
+        self.__mutation_probability = mutation_probability
+        self.__splitter = splitter
 
-def _swap_customers_between_vehicles(solution: Solution, v1, v2):
-    v1_ids = v1.customers()[1:-1]
-    new_vehicles = []
-    if v1_ids and len(v1_ids) > 1:
-        c = random.choice(v1_ids)
-        v1_new_ids = [key for key, _ in groupby([x for x in v1_ids if x != c])]
-        v2_new_ids = [key for key, _ in groupby(v2.customers() + [c])]
-        new_vehicles.append(Vehicle(itinerary=Itinerary([0] + v1_new_ids + [0]), autonomy=v1.autonomy, capacity=v1.capacity))
-        new_vehicles.append(Vehicle(itinerary=Itinerary([0] + v2_new_ids + [0]), autonomy=v2.autonomy, capacity=v2.capacity))
-        solution.vehicles = new_vehicles
+    def apply(self, solution: Solution) -> Solution:
+        """
+        Aplica a Inverted Displacement Mutation na solução.
+        Args:
+            solution: solução a ser mutada.
+
+        Returns:
+            Solução mutada.
+
+        """
+        if random.random() > self.__mutation_probability:
+            return solution
+
+        vehicles = solution.vehicles
+        if not vehicles:
+            return solution
+        depot_identifier = vehicles[0].route.customers[0]  # Assume depósito é o primeiro nó
+        autonomy = vehicles[0].autonomy
+        capacity = vehicles[0].capacity
+        number_vehicles = len(vehicles)
+
+        # Obtém a rota linear sem o depósito
+        flat_route = [x for x in solution.flatten_routes() if x != depot_identifier]
+        route_length = len(flat_route)
+        if route_length < 2:
+            return solution
+
+        # Seleciona dois índices distintos
+        idx1 = random.randint(0, route_length - 2)
+        idx2 = random.randint(idx1 + 1, route_length - 1)
+
+        # Extrai, inverte e recoloca o segmento
+        segment = flat_route[idx1:idx2 + 1]
+        segment.reverse()
+        mutated_route = flat_route[:idx1] + segment + flat_route[idx2 + 1:]
+
+        # Divide a rota mutada em rotas para cada veículo
+        split_routes = self.__splitter.split(Route(mutated_route))
+        mutated_vehicles = [Vehicle(route, autonomy=autonomy, capacity=capacity) for route in split_routes]
+
+        return Solution(mutated_vehicles)

@@ -6,6 +6,7 @@ class Edge:
         self.from_node: Node = from_node
         self.to_node: Node = to_node
         self.distance: float = distance
+        self.toll_quantity: int = 0 if distance is None else int(distance // 150)
 
     def __str__(self) -> str:
         return f"Edge(from={self.from_node.identifier}, to={self.to_node.identifier}, distance={self.distance})"

@@ -1,24 +1,24 @@
-from itinerary import Itinerary
+from route import Route
 
 class Vehicle:
 
-    def __init__(self, itinerary: Itinerary, capacity: int = 100, autonomy: float = 500.0) -> None:
-        self.itinerary = itinerary
+    def __init__(self, route: Route, capacity: int = 100, autonomy: float = 500.0) -> None:
+        self.route = route
         self.capacity = capacity
         self.autonomy = autonomy
 
     def customers(self) -> list[int]:
-        return self.itinerary.customers
+        return self.route.customers
 
     def distance(self) -> float:
-        return self.itinerary.distance
+        return self.route.distance
 
     def update_distance(self, distance: float) -> None:
-        self.itinerary.distance = distance
+        self.route.distance = distance
 
     def __str__(self):
         lines = [
             f"Vehicle(capacity={self.capacity}, total distance={self.distance()}, autonomy={self.autonomy}",
-            f"     {str(self.itinerary)}"]
+            f"     {str(self.route)}"]
         return "\n".join(lines)
 

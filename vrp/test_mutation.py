@@ -1,70 +1,67 @@
+from unittest import TestCase
 from unittest.mock import Mock
 
-import pytest
-
-from graph import Node
-from itinerary import Itinerary
-from solution import Solution
-from vehicle import Vehicle
-from vrp.mutation import mutate_vehicle_itinerary, mutate_itinerary_between_vehicles, _swap_customers_between_vehicles, \
-    split_routes
+from route import Route
+from vrp.mutation import Mutation
 
 
-@pytest.mark.parametrize("customers, expected", [
-    ([1, 2, 3], 3),
-    ([4, 5, 6], 3),
-    ([7, 8, 9], 3),
-    ([0, 0, 0], 1)
-])
-def test_mutate_vehicle_itinerary(customers, expected):
-    vehicle = Vehicle(depot_id=0, capacity=10, itinerary=Itinerary(customers), autonomy=1)
+class TestMutation(TestCase):
 
-    mutate_vehicle_itinerary(vehicle=vehicle, mutation_probability=1)
+    splitter = Mock()
+    splitter.split.return_value = [Route([0, 3, 2, 1, 0])]
 
-    assert customers != vehicle.customers()
-    assert expected == len(vehicle.customers())
+    def test_apply_no_mutation_due_to_probability(self):
+        mutation = Mutation(0.0, self.splitter)
 
+        solution = Mock()
 
-def test_mutate_itinerary_between_vehicles():
-    depot = Node(identifier=0, x=0, y=0)
+        mutated_solution = mutation.apply(solution)
 
-    vehicles = [Vehicle(depot_id=depot.identifier, capacity=10, itinerary=Itinerary([0, 0, 0]), autonomy=1),
-                Vehicle(depot_id=depot.identifier, capacity=10, itinerary=Itinerary([0, 0, 0]), autonomy=1)]
-    solution = Solution(vehicles=vehicles)
+        self.assertEqual(solution, mutated_solution)
 
-    mutate_itinerary_between_vehicles(depot, solution)
+    def test_apply_with_mutation_due_to_probability(self):
+        mutation = Mutation(1.0, self.splitter)
 
-    assert solution.vehicles[0].customers() == []
-    assert solution.vehicles[1].customers() == [0]
+        vehicle_mock = Mock()
+        vehicle_mock.route.customers = [0, 1, 2, 3, 0]
+        vehicle_mock.autonomy = 100
+        vehicle_mock.capacity = 50
 
+        solution = Mock()
+        solution.vehicles = [vehicle_mock]
+        solution.flatten_routes.return_value = [0, 1, 2, 3, 0]
 
-@pytest.mark.parametrize("depot, vehicles, expected", [
-    (Node(identifier=0, x=0, y=0), [
-        Vehicle(depot_id=0, capacity=10, itinerary=Itinerary([0, 0, 0]), autonomy=1),
-        Vehicle(depot_id=0, capacity=10, itinerary=Itinerary([0, 0, 0]), autonomy=1),
-        Vehicle(depot_id=0, capacity=10, itinerary=Itinerary([0, 0, 0]), autonomy=1)
-    ], [[], [0]])
-])
-def test_swap_customers_between_vehicles(depot, vehicles, expected):
-    vehicle1 = vehicles[0]
-    vehicle2 = vehicles[1]
-    vehicle3 = vehicles[2]
-    vehicles = [vehicle1, vehicle2, vehicle3]
-    solution = Solution(vehicles=vehicles)
+        mutated_solution = mutation.apply(solution)
 
-    _swap_customers_between_vehicles(depot, solution, vehicle1, vehicle2)
+        self.assertNotEqual(solution, mutated_solution)
+        self.assertEqual(len(mutated_solution.vehicles), 1)
+        self.assertEqual(mutated_solution.vehicles[0].route.customers[0], 0)
+        self.assertEqual(mutated_solution.vehicles[0].route.customers[-1], 0)
+        self.assertCountEqual(mutated_solution.vehicles[0].route.customers[1:-1], [1, 2, 3])
+        self.assertNotEqual(mutated_solution.vehicles[0].route.customers[1:-1], [1, 2, 3])
 
-    assert solution.vehicles[0] == vehicle3
-    assert solution.vehicles[1].customers() == expected[0]
-    assert solution.vehicles[2].customers() == expected[1]
+    def test_apply_with_mutation_with_insufficient_customers(self):
+        mutation = Mutation(1.0, self.splitter)
 
+        vehicle_mock = Mock()
+        vehicle_mock.route.customers = [0, 1, 0]
+        vehicle_mock.autonomy = 100
+        vehicle_mock.capacity = 50
 
-def test_split_routes():
-    depot = Node(identifier=0, x=0, y=0)
-    solution = Mock()
-    solution.vehicles = [Vehicle(0, Itinerary([0,1,2,3,0]))]
+        solution = Mock()
+        solution.vehicles = [vehicle_mock]
+        solution.flatten_routes.return_value = [0, 1, 0]
 
-    split_routes(depot, solution)
+        mutated_solution = mutation.apply(solution)
 
-    assert len(solution.vehicles[0].full_itinerary.customers) == 7
-    assert len(solution.vehicles[0].itinerary.customers) == 7
+        self.assertEqual(solution, mutated_solution)
+
+    def test_apply_no_mutation_with_no_vehicles(self):
+        mutation = Mutation(1.0, self.splitter)
+
+        solution = Mock()
+        solution.vehicles = []
+
+        mutated_solution = mutation.apply(solution)
+
+        self.assertEqual(solution, mutated_solution)

@@ -36,13 +36,14 @@ from genetic_algorithm import default_problems
 from solution import Solution
 from vrp import VRP
 from vrp.selection import parents_selection
+from vrp.vrp_builder import VrpFactory
 
 STOP_GENERATION = False
 NUMBER_VEHICLES = 2
 POPULATION_SIZE = 100
 MUTATION_PROBABILITY = 1
 VEHICLE_AUTONOMY = 600
-VEHICLE_CAPACITY = 30
+VEHICLE_CAPACITY = 20
 
 cities_locations = default_problems[15]
 nodes: list[Node] = [Node(identifier=i, x=city[0], y=city[1], priority=random.randint(0, 1), demand=random.randint(1,11)) for i, city in enumerate(cities_locations)]
@@ -51,7 +52,9 @@ g = Graph(nodes)
 
 generation_counter = itertools.count(start=1)
 
-vrp = VRP(g, POPULATION_SIZE, NUMBER_VEHICLES, MUTATION_PROBABILITY, VEHICLE_AUTONOMY, VEHICLE_CAPACITY)
+vrp_factory = VrpFactory(g, POPULATION_SIZE, NUMBER_VEHICLES, MUTATION_PROBABILITY, VEHICLE_AUTONOMY, VEHICLE_CAPACITY)
+
+vrp = vrp_factory.create_vrp()
 
 population: list[Solution] = vrp.generate_initial_population()
 
@@ -80,10 +83,10 @@ while generate:
 
     while len(new_population) < POPULATION_SIZE:
         parent1, parent2 = parents_selection(population)
-        child = vrp.crossover(parent1, parent2)
-        child = vrp.mutate(child)
-        child = vrp.adjustment(child)
-        new_population.append(child)
+        child1, child2 = vrp.crossover(parent1, parent2)
+        mutated_child1 = vrp.mutate(child1)
+        mutated_child2 = vrp.mutate(child2)
+        new_population.extend([mutated_child1, mutated_child2])
 
     population = new_population
 
