@@ -1,6 +1,8 @@
 class Node:
 
     def __init__(self, identifier: int = None, x: float = None, y: float = None, priority: int = 0, demand: int = 0) -> None:
+        if identifier is not None and not isinstance(identifier, int):
+            raise TypeError('identifier deve ser int')
         self.identifier: int = identifier
         self.x: float = x
         self.y: float = y

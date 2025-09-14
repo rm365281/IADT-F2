@@ -6,6 +6,8 @@ from domain.graph import Edge
 
 class Graph:
     def __init__(self, nodes: list[Node]) -> None:
+        if not isinstance(nodes, list) or not all(isinstance(n, Node) for n in nodes):
+            raise TypeError('nodes deve ser uma lista de Node')
         self._nodes: list[Node] = []
         self._edges: list[Edge] = []
         for node in nodes:
@@ -16,6 +18,10 @@ class Graph:
                     distance: float = math.hypot(from_node.x - to_node.x, from_node.y - to_node.y)
                     edge = Edge(from_node=from_node, to_node=to_node, distance=distance)
                     self.add_edge(edge)
+
+    @property
+    def nodes(self):
+        return self._nodes
 
     def add_node(self, node: Node) -> None:
         if node in self._nodes:

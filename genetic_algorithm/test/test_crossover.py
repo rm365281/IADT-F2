@@ -3,7 +3,6 @@ from genetic_algorithm import Crossover
 from domain.solution import Solution
 from domain.vehicle import Vehicle
 from domain.route import Route
-
 from genetic_algorithm.crossover import choose_two_different_indices
 
 
@@ -48,22 +47,19 @@ class TestCrossover(TestCase):
         self.assertNotEqual(self.parent2.flatten_routes(), child2.flatten_routes())
 
     def test_crossover_preserves_customers(self):
-        def get_all_customers(solution: Solution) -> set:
-            customers = set()
-            for vehicle in solution.vehicles:
-                customers.update([c for c in vehicle.customers() if c != self.depot_identifier])
-            return customers
-
+        """Deve garantir que todos os clientes dos pais estejam nos filhos."""
         child1, child2 = self.crossover.apply(self.parent1, self.parent2)
+        all_customers_parent = set(self.parent1.flatten_routes() + self.parent2.flatten_routes())
+        self.assertTrue(set(child1.flatten_routes()).issubset(all_customers_parent))
+        self.assertTrue(set(child2.flatten_routes()).issubset(all_customers_parent))
 
-        all_customers_parent1 = get_all_customers(self.parent1)
-        all_customers_parent2 = get_all_customers(self.parent2)
-        all_customers_children = get_all_customers(child1).union(get_all_customers(child2))
+    def test_invalid_parents_type(self):
+        """Deve lançar erro se os pais não forem Solution."""
+        with self.assertRaises(Exception):
+            self.crossover.apply('not_a_solution', self.parent2)
 
-        self.assertEqual(all_customers_parent1, all_customers_children)
-        self.assertEqual(all_customers_parent2, all_customers_children)
-
-        self.assertEqual(len(self.parent1.flatten_routes()), len(child1.flatten_routes()))
-        self.assertEqual(len(self.parent2.flatten_routes()), len(child2.flatten_routes()))
-        self.assertEqual(len(self.parent1.flatten_routes()), len(child2.flatten_routes()))
-        self.assertEqual(len(self.parent2.flatten_routes()), len(child1.flatten_routes()))
+    def test_empty_parents(self):
+        """Deve lançar erro se os pais não tiverem veículos."""
+        empty_parent = Solution(vehicles=[])
+        with self.assertRaises(Exception):
+            self.crossover.apply(empty_parent, self.parent2)

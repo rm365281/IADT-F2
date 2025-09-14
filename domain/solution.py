@@ -5,6 +5,8 @@ class Solution:
     fitness: float = 0.0
 
     def __init__(self, vehicles: list[Vehicle]) -> None:
+        if not isinstance(vehicles, list) or not all(isinstance(v, Vehicle) for v in vehicles):
+            raise TypeError('vehicles deve ser uma lista de Vehicle')
         self.vehicles = vehicles
 
     def __str__(self) -> str:

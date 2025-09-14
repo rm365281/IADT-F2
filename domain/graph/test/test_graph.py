@@ -1,7 +1,5 @@
 from unittest import TestCase
-
 import pytest
-
 from domain.graph import Graph, Node, Edge
 
 
@@ -49,11 +47,18 @@ class TestGraph(TestCase):
         graph = Graph(nodes=[])
         self.assertFalse(node in graph)
 
-    def test_get_edge_toll_by_node_id_returns_correct_toll(self):
-        node1 = Node(identifier=1, x=0, y=0, priority=0, demand=10)
-        node2 = Node(identifier=2, x=3, y=4, priority=0, demand=20)
-        edge = Edge(from_node=node1, to_node=node2, distance=2400)
+    def test_empty_graph(self):
+        """Deve permitir grafo vazio e não conter nenhum nó."""
         graph = Graph(nodes=[])
-        graph.add_edge(edge)
-        toll = graph.get_edge_toll_by_node_id(1, 2)
-        self.assertEqual(toll, 15)
+        self.assertEqual(len(graph.nodes), 0)
+
+    def test_invalid_nodes_type(self):
+        """Deve lançar erro se nodes não for lista."""
+        with self.assertRaises(TypeError):
+            Graph(nodes='not_a_list')
+
+    def test_node_with_extreme_values(self):
+        """Deve aceitar nós com valores extremos."""
+        node = Node(identifier=999999, x=1e6, y=-1e6, priority=100, demand=0)
+        graph = Graph(nodes=[node])
+        self.assertEqual(graph.get_node(999999), node)

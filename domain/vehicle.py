@@ -3,6 +3,8 @@ from .route import Route
 class Vehicle:
 
     def __init__(self, route: Route, capacity: int = 100, autonomy: float = 500.0) -> None:
+        if not isinstance(route, Route):
+            raise TypeError('route deve ser uma instância de Route')
         self.route = route
         self.capacity = capacity
         self.autonomy = autonomy
@@ -18,4 +20,3 @@ class Vehicle:
             f"Vehicle(capacity={self.capacity}, total distance={self.distance()}, autonomy={self.autonomy}",
             f"     {str(self.route)}"]
         return "\n".join(lines)
-

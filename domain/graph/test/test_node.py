@@ -23,3 +23,21 @@ class TestNode(TestCase):
         self.assertEqual(node1, node2)
         self.assertNotEqual(node1, node3)
         self.assertNotEqual(node1, "not a node")
+
+    def test_extreme_values(self):
+        """Deve aceitar valores extremos para atributos."""
+        from domain.graph.node import Node
+
+        node = Node(identifier=999999, x=1e9, y=-1e9, priority=1000, demand=-100)
+        self.assertEqual(node.identifier, 999999)
+        self.assertEqual(node.x, 1e9)
+        self.assertEqual(node.y, -1e9)
+        self.assertEqual(node.priority, 1000)
+        self.assertEqual(node.demand, -100)
+
+    def test_invalid_identifier_type(self):
+        """Deve lançar erro se identifier não for int."""
+        from domain.graph.node import Node
+
+        with self.assertRaises(Exception):
+            Node(identifier='not_an_int')

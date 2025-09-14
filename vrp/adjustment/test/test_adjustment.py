@@ -1,17 +1,15 @@
 from unittest import TestCase
 from unittest.mock import Mock
 
-from domain import Route
-from domain import Solution
+from domain.route import Route
+from domain.solution import Solution
+from domain.vehicle import Vehicle
 from vrp.adjustment.adjustment import Adjustment
 
 
 def create_vehicle(autonomy=100, capacity=50, route=None):
-    vehicle = Mock()
-    vehicle.autonomy = autonomy
-    vehicle.capacity = capacity
-    vehicle.route = route if route is not None else Mock()
-    return vehicle
+    route = route if route is not None else Route([0, 1, 2, 0])
+    return Vehicle(route=route, autonomy=autonomy, capacity=capacity)
 
 
 def create_solution(vehicles):

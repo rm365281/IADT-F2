@@ -3,6 +3,8 @@ from domain.graph import Node
 class Edge:
 
     def __init__(self, from_node: Node, to_node: Node, distance: float = 0) -> None:
+        if not isinstance(from_node, Node) or not isinstance(to_node, Node):
+            raise TypeError('from_node e to_node devem ser instâncias de Node')
         self.from_node: Node = from_node
         self.to_node: Node = to_node
         self.distance: float = distance
