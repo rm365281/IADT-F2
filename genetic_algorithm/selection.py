@@ -30,7 +30,7 @@ def parents_selection(population: list[Solution]) -> tuple[Solution, Solution]:
     selected = []
     for _ in range(2):
         tournament = random.sample(range(len(population)), tournament_size)
-        winner = max(tournament, key=lambda i: population[i].fitness)
+        winner = min(tournament, key=lambda i: population[i].fitness)
         selected.append(population[winner])
         population.remove(population[winner])
         if len(population) < tournament_size:
