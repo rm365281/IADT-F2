@@ -11,6 +11,55 @@ nodes: list[Node] = [Node(identifier=i, x=city[0], y=city[1], priority=random.ra
 
 app = FastAPI()
 
+async def handle_start_command(data, send_event, websocket):
+    population_size = data.get("population_size", 100)
+    number_vehicles = data.get("number_vehicles", 2)
+    mutation_probability = data.get("mutation_probability", 0.5)
+    vehicle_autonomy = data.get("vehicle_autonomy", 600)
+    vehicle_capacity = data.get("vehicle_capacity", 20)
+    crossover_probability = data.get("crossover_probability", 1.0)
+
+    cities = data.get("cities")
+    if cities:
+        try:
+            nodes_from_client = [
+                Node(
+                    identifier=city["identifier"],
+                    x=city["x"],
+                    y=city["y"],
+                    priority=city.get("priority", 0),
+                    demand=city.get("demand", 1)
+                )
+                for city in cities
+            ]
+            g = Graph(nodes_from_client)
+        except Exception as e:
+            await websocket.send_json({"event": "error", "message": f"Erro ao processar cidades: {str(e)}"})
+            return None
+    else:
+        g = Graph(nodes)
+    try:
+        vrp_factory = VrpFactory(
+            g,
+            population_size,
+            number_vehicles,
+            mutation_probability,
+            vehicle_autonomy,
+            vehicle_capacity,
+            crossover_probability
+        )
+        runner = GeneticAlgorithmRunner(
+            vrp_factory,
+            population_size,
+            on_new_best_solution=send_event
+        )
+        await runner.start()
+        await websocket.send_json({"event": "started"})
+        return runner
+    except ValueError as e:
+        await websocket.send_json({"event": "error", "message": str(e)})
+        return None
+
 @app.websocket("/ws/genetic")
 async def websocket_endpoint(websocket: WebSocket):
     """
@@ -37,33 +86,7 @@ async def websocket_endpoint(websocket: WebSocket):
             command = data.get("command")
 
             if command == "start":
-                population_size = data.get("population_size", 100)
-                number_vehicles = data.get("number_vehicles", 2)
-                mutation_probability = data.get("mutation_probability", 0.5)
-                vehicle_autonomy = data.get("vehicle_autonomy", 600)
-                vehicle_capacity = data.get("vehicle_capacity", 20)
-                crossover_probability = data.get("crossover_probability", 1.0)
-
-                g = Graph(nodes)
-                try:
-                    vrp_factory = VrpFactory(
-                        g,
-                        population_size,
-                        number_vehicles,
-                        mutation_probability,
-                        vehicle_autonomy,
-                        vehicle_capacity,
-                        crossover_probability
-                    )
-                    runner = GeneticAlgorithmRunner(
-                        vrp_factory,
-                        population_size,
-                        on_new_best_solution=send_event
-                    )
-                    await runner.start()
-                    await websocket.send_json({"event": "started"})
-                except ValueError as e:
-                    await websocket.send_json({"event": "error", "message": str(e)})
+                runner = await handle_start_command(data, send_event, websocket)
             elif command == "pause" and runner:
                 await runner.pause()
                 await websocket.send_json({"event": "paused"})
