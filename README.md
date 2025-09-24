@@ -2,6 +2,16 @@
 
 Este projeto implementa um sistema de otimização de rotas utilizando algoritmos genéticos para o problema de roteamento de veículos (VRP - Vehicle Routing Problem). O sistema é modular, organizado em pacotes para facilitar a manutenção e extensão.
 
+## Restrições Implementadas
+
+O sistema considera as seguintes restrições no problema de roteamento de veículos:
+
+- **Menor distância total**: Busca minimizar a distância total percorrida pelos veículos.
+- **Capacidade do veículo**: Cada veículo possui uma capacidade máxima de carga.
+- **Prioridade de entrega**: Entregas podem ter prioridade (1 para crítico, 0 para regular).
+- **Múltiplos veículos**: Suporte a múltiplos veículos para realizar as entregas.
+- **Equilíbrio de distâncias**: O algoritmo busca equiparar a distância percorrida entre os veículos, promovendo um balanceamento das rotas.
+
 ## Estrutura do Projeto
 
 - **main.py**: Ponto de entrada principal do sistema.
