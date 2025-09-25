@@ -50,8 +50,7 @@ class GeneticAlgorithmRunner:
                         "best_distance": round(self.best_solution.total_distance(), 2),
                         "best_fitness": round(self.best_solution.fitness, 2),
                         "generation_time": round(generation_time, 2),
-                        "total_time": round(total_time, 2),
-                        "solution": str(self.best_solution)
+                        "total_time": round(total_time, 2)
                     })
 
             new_population = [copy.deepcopy(self.population[0])]
@@ -84,5 +83,5 @@ class GeneticAlgorithmRunner:
         return {
             "running": self.running,
             "paused": self.paused,
-            "best_solution": str(self.best_solution) if self.best_solution else None
+            "best_solution": self.best_solution.to_dict() if self.best_solution else None
         }

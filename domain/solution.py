@@ -24,3 +24,10 @@ class Solution:
         for vehicle in self.vehicles:
             route += vehicle.customers()
         return route
+
+    def to_dict(self, customer_id_to_node=None):
+        return {
+            "vehicles": [v.to_dict(customer_id_to_node=customer_id_to_node) for v in self.vehicles],
+            "fitness": self.fitness,
+            "total_distance": self.total_distance()
+        }

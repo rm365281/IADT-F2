@@ -15,6 +15,13 @@ class Vehicle:
     def distance(self) -> float:
         return self.route.distance
 
+    def to_dict(self, customer_id_to_node=None):
+        return {
+            "capacity": self.capacity,
+            "autonomy": self.autonomy,
+            "route": self.route.to_dict(customer_id_to_node=customer_id_to_node)
+        }
+
     def __str__(self):
         lines = [
             f"Vehicle(capacity={self.capacity}, total distance={self.distance()}, autonomy={self.autonomy}",

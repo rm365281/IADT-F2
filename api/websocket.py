@@ -11,7 +11,7 @@ nodes: list[Node] = [Node(identifier=i, x=city[0], y=city[1], priority=random.ra
 
 app = FastAPI()
 
-async def handle_start_command(data, send_event, websocket):
+async def handle_start_command(data, send_event, websocket, node_list=None):
     population_size = data.get("population_size", 100)
     number_vehicles = data.get("number_vehicles", 2)
     mutation_probability = data.get("mutation_probability", 0.5)
@@ -37,6 +37,7 @@ async def handle_start_command(data, send_event, websocket):
             await websocket.send_json({"event": "error", "message": f"Erro ao processar cidades: {str(e)}"})
             return None
     else:
+        nodes_from_client = None
         g = Graph(nodes)
     try:
         vrp_factory = VrpFactory(
@@ -55,10 +56,10 @@ async def handle_start_command(data, send_event, websocket):
         )
         await runner.start()
         await websocket.send_json({"event": "started"})
-        return runner
+        return runner, nodes_from_client if nodes_from_client else nodes
     except ValueError as e:
         await websocket.send_json({"event": "error", "message": str(e)})
-        return None
+        return None, None
 
 @app.websocket("/ws/genetic")
 async def websocket_endpoint(websocket: WebSocket):
@@ -75,10 +76,16 @@ async def websocket_endpoint(websocket: WebSocket):
     """
     await websocket.accept()
 
-    async def send_event(event: dict):
-        await websocket.send_json(event)
-
     runner = None
+    node_list = None
+
+    async def send_event_with_nodes(event: dict):
+        # Only adjust for new_best_solution
+        if event.get("event") == "new_best_solution" and runner and node_list:
+            customer_id_to_node = {n.identifier: n for n in node_list}
+            solution_obj = runner.best_solution
+            event["solution"] = solution_obj.to_dict(customer_id_to_node=customer_id_to_node) if solution_obj else None
+        await websocket.send_json(event)
 
     try:
         while True:
@@ -86,7 +93,7 @@ async def websocket_endpoint(websocket: WebSocket):
             command = data.get("command")
 
             if command == "start":
-                runner = await handle_start_command(data, send_event, websocket)
+                runner, node_list = await handle_start_command(data, send_event_with_nodes, websocket)
             elif command == "pause" and runner:
                 await runner.pause()
                 await websocket.send_json({"event": "paused"})
@@ -94,18 +101,27 @@ async def websocket_endpoint(websocket: WebSocket):
                 await runner.resume()
                 await websocket.send_json({"event": "resumed"})
             elif command == "stop" and runner:
-                solution = runner.status()["best_solution"]
+                customer_id_to_node = {n.identifier: n for n in node_list} if node_list else {}
+                solution_obj = runner.best_solution
+                solution = solution_obj.to_dict(customer_id_to_node=customer_id_to_node) if solution_obj else None
                 await runner.stop()
                 await websocket.send_json({
                     "event": "stopped",
                     "solution": solution
                 })
             elif command == "status" and runner:
-                await websocket.send_json({"event": "status", **runner.status()})
+                customer_id_to_node = {n.identifier: n for n in node_list} if node_list else {}
+                status = runner.status()
+                solution_obj = runner.best_solution
+                status["best_solution"] = solution_obj.to_dict(customer_id_to_node=customer_id_to_node) if solution_obj else None
+                await websocket.send_json({"event": "status", **status})
             elif command == "get_best_solution" and runner:
+                customer_id_to_node = {n.identifier: n for n in node_list} if node_list else {}
+                solution_obj = runner.best_solution
+                solution = solution_obj.to_dict(customer_id_to_node=customer_id_to_node) if solution_obj else None
                 await websocket.send_json({
                     "event": "best_solution",
-                    "solution": runner.status()["best_solution"]
+                    "solution": solution
                 })
     except Exception:
         if runner:
