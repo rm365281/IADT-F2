@@ -1,6 +1,6 @@
 class Node:
 
-    def __init__(self, identifier: int = None, x: float = None, y: float = None, priority: int = 0, demand: int = 0) -> None:
+    def __init__(self, identifier: int = None, x: float = None, y: float = None, priority: int = 0, demand: int = 0, name: str = "") -> None:
         if identifier is not None and not isinstance(identifier, int):
             raise TypeError('identifier deve ser int')
         self.identifier: int = identifier
@@ -8,6 +8,7 @@ class Node:
         self.y: float = y
         self.priority: int = priority
         self.demand: int = demand
+        self.name = name
 
     def __eq__(self, value) -> bool:
         if not isinstance(value, Node):
@@ -15,6 +16,6 @@ class Node:
         return self.identifier == value.identifier
     
     def __str__(self):
-        return f"Node(id={self.identifier}, x={self.x}, y={self.y}, priority={self.priority}, demand={self.demand})"
+        return f"Node(id={self.identifier}, x={self.x}, y={self.y}, priority={self.priority}, demand={self.demand}, name='{self.name}')"
     
     __repr__ = __str__

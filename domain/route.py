@@ -17,7 +17,8 @@ class Route:
                 {
                     "id": cid,
                     "x": customer_id_to_node[cid].x,
-                    "y": customer_id_to_node[cid].y
+                    "y": customer_id_to_node[cid].y,
+                    "name": getattr(customer_id_to_node[cid], "name", None)
                 } for cid in self.customers if cid in customer_id_to_node
             ]
         return route_info

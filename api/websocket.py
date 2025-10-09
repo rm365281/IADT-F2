@@ -11,7 +11,7 @@ nodes: list[Node] = [Node(identifier=i, x=city[0], y=city[1], priority=random.ra
 
 app = FastAPI()
 
-async def handle_start_command(data, send_event, websocket, node_list=None):
+async def handle_start_command(data, send_event, websocket):
     population_size = data.get("population_size", 100)
     number_vehicles = data.get("number_vehicles", 2)
     mutation_probability = data.get("mutation_probability", 0.5)
@@ -28,7 +28,8 @@ async def handle_start_command(data, send_event, websocket, node_list=None):
                     x=city["x"],
                     y=city["y"],
                     priority=city.get("priority", 0),
-                    demand=city.get("demand", 1)
+                    demand=city.get("demand", 1),
+                    name=city.get("name")
                 )
                 for city in cities
             ]
@@ -80,7 +81,6 @@ async def websocket_endpoint(websocket: WebSocket):
     node_list = None
 
     async def send_event_with_nodes(event: dict):
-        # Only adjust for new_best_solution
         if event.get("event") == "new_best_solution" and runner and node_list:
             customer_id_to_node = {n.identifier: n for n in node_list}
             solution_obj = runner.best_solution

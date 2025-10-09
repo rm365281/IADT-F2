@@ -2,7 +2,6 @@ import asyncio
 import copy
 import itertools
 import time
-from typing import Callable, Awaitable
 from typing import Callable, Awaitable, Optional
 from domain.solution import Solution
 from genetic_algorithm.selection import parents_selection
